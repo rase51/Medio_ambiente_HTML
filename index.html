@@ -1226,7 +1226,6 @@
             margin-right: 15px;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             header {
                 flex-direction: column;
@@ -1274,9 +1273,6 @@
             }
         }
 
-        /* NUEVOS ESTILOS DE LA ACTUALIZACIÓN */
-
-        /* Estilos para el loading overlay */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -1308,7 +1304,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Estilos para la estructura principal y contenido */
         .main-container {
             display: flex;
             flex-direction: column;
@@ -1411,8 +1406,19 @@
             box-shadow: 0 8px 20px rgba(50, 184, 198, 0.4);
         }
 
-        /* Agregando estilos para las tarjetas de hábitos rápidos con colores verdes */
-        /* CHANGE: Mejorando el grid de hábitos rápidos para mejor distribución del espacio */
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(50, 184, 198, 0.3);
+        }
+
         .quick-habits-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -2712,7 +2718,6 @@
                 <button class="btn-secondary" onclick="closeModal('deleteReportModal')" style="background: var(--color-card); color: var(--color-text);">
                     Cancelar
                 </button>
-                <!-- Conectando el botón de eliminar con la función confirmDeleteReport() -->
                 <button class="btn-primary" id="confirmDeleteReportBtn" onclick="confirmDeleteReport()" style="background: var(--color-danger); border: none;">
                     Eliminar
                 </button>
@@ -4157,23 +4162,20 @@
                     currentStreak = Math.max(...habits.map(h => h.streak || 0));
                 }
 
-                // Count active habits
                 const { count: activeHabitsCount } = await supabaseClient
                     .from('habits')
                     .select('*', { count: 'exact', head: true })
                     .eq('user_id', currentUser.userId);
 
-                // Count unresolved reports
                 const { count: unresolvedCount } = await supabaseClient
                     .from('reports')
                     .select('*', { count: 'exact', head: true })
                     .eq('user_id', currentUser.userId)
                     .neq('status', 'resuelto');
 
-                // Weekly progress calculation
                 const now = new Date();
                 const dayOfWeek = now.getDay();
-                const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday is 0, Sunday is 6. Adjust to make Monday the start of week.
+                const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; 
                 const weekStart = new Date(now);
                 weekStart.setDate(now.getDate() - diff);
                 weekStart.setHours(0, 0, 0, 0);
@@ -4203,12 +4205,11 @@
 
 
                 const totalVerifications = weeklyHabitVerifications + weeklyResolutionVerifications;
-                const weeklyGoal = 10; // Objetivo reducido a 10 verificaciones
+                const weeklyGoal = 10; 
                 const progressPercentage = Math.min((totalVerifications / weeklyGoal) * 100, 100);
                 const circumference = 2 * Math.PI * 90;
                 const offset = circumference - (progressPercentage / 100) * circumference;
 
-                // Weekly challenges
                 const currentWeekNumber = Math.ceil((now - new Date(now.getFullYear(), 0, 1)) / 604800000);
                 const packIndex = ((currentWeekNumber - 1) % 4);
                 const currentChallenges = weeklyChallengesPacks[packIndex];
@@ -4217,7 +4218,6 @@
                     let progress = 0;
                     
                     if (challenge.type === 'verifications_given') {
-                        // Count verifications GIVEN by user this week
                         const { count: habitVerifs } = await supabaseClient
                             .from('verifications')
                             .select('*', { count: 'exact', head: true })
@@ -4425,7 +4425,6 @@
             }
         }
 
-        // Initial call to check authentication and load data
         checkAuth();
     </script>
 </body>
