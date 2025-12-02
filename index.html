@@ -3330,11 +3330,15 @@
             };
             
             let resolutionsHtml = '';
-            if (report.resolution_evidences && report.resolution_evidences.length > 0) {
+            // Filtrar solo evidencias NO verificadas para mostrar en el feed
+            const pendingResolutions = report.resolution_evidences ? 
+                report.resolution_evidences.filter(e => !e.is_verified) : [];
+            
+            if (pendingResolutions.length > 0) {
                 resolutionsHtml = `
                     <div class="resolution-section">
                         <h4 style="margin: 15px 0 10px 0;">Evidencias de Resolución:</h4>
-                        ${report.resolution_evidences.map(evidence => {
+                        ${pendingResolutions.map(evidence => {
                             const canVerify = evidence.user_id !== currentUser.userId;
                             const evidenceColors = evidence.users.avatar_color.split(',');
                             return `
@@ -3660,99 +3664,93 @@
                 const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
                 
                 // If verified, perform additional actions and delete evidence
-                if (isNowVerified) {
-                    const evidenceElement = document.querySelector(`[data-evidence-id="${evidenceId}"]`);
-                    if (evidenceElement) {
-                        evidenceElement.classList.add('verification-success');
-                        await new Promise(resolve => setTimeout(resolve, 600));
-                    }
-                    
-                    if (type === 'habit') {
-                        const { data: habit } = await supabaseClient
-                            .from('habits')
-                            .select('completed_count, streak, last_streak_date')
-                            .eq('id', evidence.habit_id)
-                            .single();
-                        
-                        if (habit) {
-                            // Obtener la fecha actual en formato YYYY-MM-DD
-                            const today = new Date();
-                            const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
-                            
-                            // Obtener la última fecha de actualización de racha
-                            const lastStreakDateStr = habit.last_streak_date; // Ya está en formato YYYY-MM-DD desde la BD
-                            
-                            console.log('[v0] Verificando racha - Hoy:', todayStr, 'Última fecha:', lastStreakDateStr);
-                            
-                            // Verificar si ya se incrementó la racha hoy
-                            const canIncrementStreak = lastStreakDateStr !== todayStr;
-                            
-                            // Actualizar el hábito
-                            const updateData = {
-                                completed_count: habit.completed_count + 1
-                            };
-                            
-                            // Solo actualizar racha si es un día diferente
-                            if (canIncrementStreak) {
-                                let newStreak = habit.streak;
-                                
-                                if (!lastStreakDateStr) {
-                                    // Primera vez, iniciar racha
-                                    newStreak = 1;
-                                } else {
-                                    // Calcular el día anterior
-                                    const yesterdayDate = new Date(today);
-                                    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-                                    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
-                                    
-                                    console.log('[v0] Ayer fue:', yesterdayStr);
-                                    
-                                    if (lastStreakDateStr === yesterdayStr) {
-                                        // Continúa la racha (verificó ayer)
-                                        newStreak = habit.streak + 1;
-                                        console.log('[v0] Racha continúa, nuevo valor:', newStreak);
-                                    } else if (lastStreakDateStr < yesterdayStr) {
-                                        // Se rompió la racha (pasó más de un día)
-                                        newStreak = 1;
-                                        console.log('[v0] Racha rota, reiniciando a 1');
-                                    } else {
-                                        // Fecha futura? mantener racha actual
-                                        newStreak = habit.streak;
-                                    }
-                                }
-                                
-                                updateData.streak = newStreak;
-                                updateData.last_streak_date = todayStr;
-                                console.log('[v0] Incrementando racha. Nueva racha:', newStreak);
-                            } else {
-                                console.log('[v0] Ya se incrementó la racha hoy, solo actualizando completed_count');
-                            }
-                            
-                            await supabaseClient
-                                .from('habits')
-                                .update(updateData)
-                                .eq('id', evidence.habit_id);
+                    if (isNowVerified) {
+                        const evidenceElement = document.querySelector(`[data-evidence-id="${evidenceId}"]`);
+                        if (evidenceElement) {
+                            evidenceElement.classList.add('verification-success');
+                            await new Promise(resolve => setTimeout(resolve, 600));
                         }
                         
-                        // Delete the verified habit evidence
-                        await supabaseClient
-                            .from('habit_evidences')
-                            .delete()
-                            .eq('id', evidenceId);
-                    } else {
-                        // Delete the verified resolution evidence
-                        await supabaseClient
-                            .from('resolution_evidences')
-                            .delete()
-                            .eq('id', evidenceId);
+                        if (type === 'habit') {
+                            const { data: habit } = await supabaseClient
+                                .from('habits')
+                                .select('completed_count, streak, last_streak_date')
+                                .eq('id', evidence.habit_id)
+                                .single();
+                            
+                            if (habit) {
+                                // Obtener la fecha actual en formato YYYY-MM-DD
+                                const today = new Date();
+                                const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+                                
+                                // Obtener la última fecha de actualización de racha
+                                const lastStreakDateStr = habit.last_streak_date; // Ya está en formato YYYY-MM-DD desde la BD
+                                
+                                console.log('[v0] Verificando racha - Hoy:', todayStr, 'Última fecha:', lastStreakDateStr);
+                                
+                                // Verificar si ya se incrementó la racha hoy
+                                const canIncrementStreak = lastStreakDateStr !== todayStr;
+                                
+                                // Actualizar el hábito
+                                const updateData = {
+                                    completed_count: habit.completed_count + 1
+                                };
+                                
+                                // Solo actualizar racha si es un día diferente
+                                if (canIncrementStreak) {
+                                    let newStreak = habit.streak;
+                                    
+                                    if (!lastStreakDateStr) {
+                                        // Primera vez, iniciar racha
+                                        newStreak = 1;
+                                    } else {
+                                        // Calcular el día anterior
+                                        const yesterdayDate = new Date(today);
+                                        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                                        const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+                                        
+                                        console.log('[v0] Ayer fue:', yesterdayStr);
+                                        
+                                        if (lastStreakDateStr === yesterdayStr) {
+                                            // Continúa la racha (verificó ayer)
+                                            newStreak = habit.streak + 1;
+                                            console.log('[v0] Racha continúa, nuevo valor:', newStreak);
+                                        } else if (lastStreakDateStr < yesterdayStr) {
+                                            // Se rompió la racha (pasó más de un día)
+                                            newStreak = 1;
+                                            console.log('[v0] Racha rota, reiniciando a 1');
+                                        } else {
+                                            // Fecha futura? mantener racha actual
+                                            newStreak = habit.streak;
+                                        }
+                                    }
+                                    
+                                    updateData.streak = newStreak;
+                                    updateData.last_streak_date = todayStr;
+                                    console.log('[v0] Incrementando racha. Nueva racha:', newStreak);
+                                } else {
+                                    console.log('[v0] Ya se incrementó la racha hoy, solo actualizando completed_count');
+                                }
+                                
+                                await supabaseClient
+                                    .from('habits')
+                                    .update(updateData)
+                                    .eq('id', evidence.habit_id);
+                            }
+                            
+                            // NO se elimina la evidencia para mantener el historial del progreso semanal
+                            // La evidencia queda marcada como is_verified = true
+                        } else {
+                            // NO se elimina la evidencia de resolución para mantener el historial
+                            // La evidencia queda marcada como is_verified = true
 
-                        // Update the report status to "resuelto"
-                        await supabaseClient
-                            .from('reports')
-                            .update({ status: 'resuelto' })
-                            .eq('id', evidence.report_id);
+                            // Update the report status to "resuelto"
+                            await supabaseClient
+                                .from('reports')
+                                .update({ status: 'resuelto' })
+                                .eq('id', evidence.report_id);
+                        }
                     }
-                }
                 
                 showToast(randomMessage, 'success', true);
                 
@@ -4058,6 +4056,92 @@
             ]
         ];
 
+        // Función para verificar y desbloquear logros
+        async function checkAndUnlockAchievements(currentStreak, totalVerifications, weeklyGoal, unlockedKeys) {
+            if (!currentUser) return;
+            
+            const achievementsToUnlock = [];
+            
+            // Logro: Cuenta creada (siempre desbloqueado)
+            if (!unlockedKeys.has('account_created')) {
+                achievementsToUnlock.push('account_created');
+            }
+            
+            // Logro: Primera verificación (al menos 1 evidencia verificada)
+            if (!unlockedKeys.has('first_verification')) {
+                const { count: totalVerified } = await supabaseClient
+                    .from('habit_evidences')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.userId)
+                    .eq('is_verified', true);
+                
+                const { count: totalResVerified } = await supabaseClient
+                    .from('resolution_evidences')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.userId)
+                    .eq('is_verified', true);
+                
+                if ((totalVerified || 0) + (totalResVerified || 0) >= 1) {
+                    achievementsToUnlock.push('first_verification');
+                }
+            }
+            
+            // Logro: Maestro de Rachas (7 días de racha)
+            if (!unlockedKeys.has('streak_master') && currentStreak >= 7) {
+                achievementsToUnlock.push('streak_master');
+            }
+            
+            // Logro: Primera Semana (completar progreso semanal)
+            if (!unlockedKeys.has('weekly_progress_1') && totalVerifications >= weeklyGoal) {
+                achievementsToUnlock.push('weekly_progress_1');
+            }
+            
+            // Logro: Guerrero Ecológico (50 acciones verificadas total)
+            if (!unlockedKeys.has('eco_warrior')) {
+                const { count: totalHabitVerified } = await supabaseClient
+                    .from('habit_evidences')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.userId)
+                    .eq('is_verified', true);
+                
+                const { count: totalResolutionVerified } = await supabaseClient
+                    .from('resolution_evidences')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.userId)
+                    .eq('is_verified', true);
+                
+                if ((totalHabitVerified || 0) + (totalResolutionVerified || 0) >= 50) {
+                    achievementsToUnlock.push('eco_warrior');
+                }
+            }
+            
+            // Logro: Ayudante Comunitario (100 verificaciones dadas a otros)
+            if (!unlockedKeys.has('community_helper')) {
+                const { count: givenVerifications } = await supabaseClient
+                    .from('verifications')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.userId);
+                
+                if ((givenVerifications || 0) >= 100) {
+                    achievementsToUnlock.push('community_helper');
+                }
+            }
+            
+            // Guardar logros desbloqueados
+            for (const key of achievementsToUnlock) {
+                await supabaseClient
+                    .from('achievements')
+                    .upsert({ 
+                        user_id: currentUser.userId, 
+                        achievement_key: key,
+                        unlocked_at: new Date().toISOString()
+                    }, { onConflict: 'user_id,achievement_key' });
+            }
+            
+            // Actualizar el set de logros desbloqueados
+            achievementsToUnlock.forEach(key => unlockedKeys.add(key));
+        }
+
         async function loadDashboard() {
             if (!currentUser) return;
 
@@ -4072,20 +4156,6 @@
                 if (habits && habits.length > 0) {
                     currentStreak = Math.max(...habits.map(h => h.streak || 0));
                 }
-
-                // Get user's own submitted evidences (for streak and weekly progress calculation)
-                const { data: myHabitEvidences } = await supabaseClient
-                    .from('habit_evidences')
-                    .select('id') // Only need the IDs
-                    .eq('user_id', currentUser.userId);
-                
-                const { data: myResolutionEvidences } = await supabaseClient
-                    .from('resolution_evidences')
-                    .select('id') // Only need the IDs
-                    .eq('user_id', currentUser.userId);
-
-                const myHabitEvidenceIds = myHabitEvidences ? myHabitEvidences.map(e => e.id) : [];
-                const myResolutionEvidenceIds = myResolutionEvidences ? myResolutionEvidences.map(e => e.id) : [];
 
                 // Count active habits
                 const { count: activeHabitsCount } = await supabaseClient
@@ -4111,47 +4181,25 @@
                 let weeklyHabitVerifications = 0;
                 let weeklyResolutionVerifications = 0;
 
-                // Para hábitos: contar evidencias únicas que alcanzaron 3+ verificaciones esta semana
-                if (myHabitEvidenceIds.length > 0) {
-                    const { data: habitVerifsRaw } = await supabaseClient
-                        .from('verifications')
-                        .select('evidence_id, created_at')
-                        .eq('evidence_type', 'habit')
-                        .in('evidence_id', myHabitEvidenceIds)
-                        .gte('created_at', weekStart.toISOString());
-                    
-                    if (habitVerifsRaw && habitVerifsRaw.length > 0) {
-                        // Agrupar por evidence_id y contar cuántas tienen 3+ verificaciones
-                        const evidenceCounts = {};
-                        habitVerifsRaw.forEach(v => {
-                            evidenceCounts[v.evidence_id] = (evidenceCounts[v.evidence_id] || 0) + 1;
-                        });
-                        
-                        // Contar solo evidencias que alcanzaron 3+ verificaciones
-                        weeklyHabitVerifications = Object.values(evidenceCounts).filter(count => count >= 3).length;
-                    }
-                }
+                // Para hábitos: contar evidencias verificadas (is_verified = true) de esta semana
+                const { count: habitVerifiedCount } = await supabaseClient
+                    .from('habit_evidences')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.userId)
+                    .eq('is_verified', true)
+                    .gte('created_at', weekStart.toISOString());
+                
+                weeklyHabitVerifications = habitVerifiedCount || 0;
 
-                // Para reportes: contar evidencias únicas que alcanzaron 3+ verificaciones esta semana
-                if (myResolutionEvidenceIds.length > 0) {
-                    const { data: resolutionVerifsRaw } = await supabaseClient
-                        .from('verifications')
-                        .select('evidence_id, created_at')
-                        .eq('evidence_type', 'resolution')
-                        .in('evidence_id', myResolutionEvidenceIds)
-                        .gte('created_at', weekStart.toISOString());
-                    
-                    if (resolutionVerifsRaw && resolutionVerifsRaw.length > 0) {
-                        // Agrupar por evidence_id y contar cuántas tienen 3+ verificaciones
-                        const evidenceCounts = {};
-                        resolutionVerifsRaw.forEach(v => {
-                            evidenceCounts[v.evidence_id] = (evidenceCounts[v.evidence_id] || 0) + 1;
-                        });
-                        
-                        // Contar solo evidencias que alcanzaron 3+ verificaciones
-                        weeklyResolutionVerifications = Object.values(evidenceCounts).filter(count => count >= 3).length;
-                    }
-                }
+                // Para reportes: contar evidencias de resolución verificadas de esta semana
+                const { count: resolutionVerifiedCount } = await supabaseClient
+                    .from('resolution_evidences')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.userId)
+                    .eq('is_verified', true)
+                    .gte('created_at', weekStart.toISOString());
+                
+                weeklyResolutionVerifications = resolutionVerifiedCount || 0;
 
 
                 const totalVerifications = weeklyHabitVerifications + weeklyResolutionVerifications;
@@ -4237,28 +4285,10 @@
 
                 const allAchievements = [
                     {
-                        key: 'weekly_progress_1',
-                        emoji: '1️⃣',
-                        title: 'Primera Semana',
-                        description: 'Completa el progreso semanal 1 vez'
-                    },
-                    {
-                        key: 'weekly_progress_2',
-                        emoji: '2️⃣',
-                        title: 'Dos Semanas',
-                        description: 'Completa el progreso semanal 2 veces'
-                    },
-                    {
-                        key: 'weekly_progress_3',
-                        emoji: '3️⃣',
-                        title: 'Tres Semanas',
-                        description: 'Completa el progreso semanal 3 veces'
-                    },
-                    {
-                        key: 'weekly_progress_4',
-                        emoji: '4️⃣',
-                        title: 'Cuatro Semanas',
-                        description: 'Completa el progreso semanal 4 veces'
+                        key: 'account_created',
+                        emoji: '🎉',
+                        title: 'Bienvenido',
+                        description: 'Crea tu cuenta en la plataforma'
                     },
                     {
                         key: 'first_verification',
@@ -4267,16 +4297,22 @@
                         description: 'Recibe tu primera verificación'
                     },
                     {
-                        key: 'eco_warrior',
-                        emoji: '🌍',
-                        title: 'Guerrero Ecológico',
-                        description: 'Completa 50 acciones verificadas'
-                    },
-                    {
                         key: 'streak_master',
                         emoji: '🔥',
                         title: 'Maestro de Rachas',
                         description: 'Alcanza una racha de 7 días'
+                    },
+                    {
+                        key: 'weekly_progress_1',
+                        emoji: '1️⃣',
+                        title: 'Primera Semana',
+                        description: 'Completa el progreso semanal (10 acciones)'
+                    },
+                    {
+                        key: 'eco_warrior',
+                        emoji: '🌍',
+                        title: 'Guerrero Ecológico',
+                        description: 'Completa 50 acciones verificadas'
                     },
                     {
                         key: 'community_helper',
@@ -4285,6 +4321,9 @@
                         description: 'Verifica 100 evidencias de otros'
                     }
                 ];
+
+                // Verificar y desbloquear logros automáticamente
+                await checkAndUnlockAchievements(currentStreak, totalVerifications, weeklyGoal, unlockedKeys);
 
                 document.getElementById('dashboard-content').innerHTML = `
                     <div class="stats-grid">
@@ -4391,4 +4430,3 @@
     </script>
 </body>
 </html>
-
