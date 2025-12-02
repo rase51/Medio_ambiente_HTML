@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>♻️ EcoTrack - Sistema integral de hábitos verdes</title>
+    <style>
+        :root {
+            --color-primary: #10b981;
+            --color-secondary: #059669;
+            --color-accent: #34d399;
+            --color-bg: #0a0e27;
+            --color-surface: rgba(255, 255, 255, 0.05);
+            --color-text: #e5e7eb;
+            --color-text-secondary: #9ca3af;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            --border: rgba(255, 255, 255, 0.18);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        /* Navegación fija mejorada */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .navbar.scrolled {
+            padding: 15px 0;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--color-text);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: var(--color-primary);
+        }
+
+        .nav-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Hero Section mejorado con animaciones */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 100px 20px 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .hero .subtitle {
+            font-size: 1.8rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            animation: fadeInUp 0.8s ease 0.4s both;
+            flex-wrap: wrap;
+        }
+
+        .btn-hero-primary {
+            padding: 20px 50px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-hero-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-hero-secondary {
+            padding: 20px 50px;
+            background: transparent;
+            color: var(--color-text);
+            border: 2px solid var(--color-primary);
+            border-radius: 15px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-hero-secondary:hover {
+            background: rgba(16, 185, 129, 0.1);
+            transform: translateY(-3px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Features Section con cards mejoradas */
+        .features {
+            padding: 100px 20px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-card {
+            background: var(--color-surface);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            box-shadow: 0 15px 50px rgba(16, 185, 129, 0.3);
+            border-color: var(--color-primary);
+        }
+
+        .feature-icon {
+            font-size: 5rem;
+            margin-bottom: 25px;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .feature-card h3 {
+            font-size: 1.7rem;
+            margin-bottom: 15px;
+            color: var(--color-primary);
+        }
+
+        .feature-card p {
+            color: var(--color-text-secondary);
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        /* How It Works con diseño de timeline */
+        .how-it-works {
+            padding: 100px 20px;
+        }
+
+        .steps-container {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 80px;
+            position: relative;
+        }
+
+        .step:nth-child(odd) {
+            flex-direction: row;
+        }
+
+        .step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .step-content {
+            flex: 1;
+            padding: 30px;
+            background: var(--color-surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            margin: 0 40px;
+            transition: all 0.3s ease;
+        }
+
+        .step-content:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.2);
+        }
+
+        .step-number {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .step h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--color-primary);
+        }
+
+        .step p {
+            color: var(--color-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* CTA Section mejorado */
+        .cta {
+            padding: 120px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05));
+        }
+
+        .cta h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .cta p {
+            font-size: 1.3rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 50px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 20px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        footer p {
+            color: var(--color-text-secondary);
+            margin: 5px 0;
+        }
+
+        /* Responsive mejorado */
+        @media (max-width: 768px) {
+            .nav-links {
+                gap: 15px;
+            }
+
+            .nav-links a:not(.nav-btn) {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+
+            .hero .subtitle {
+                font-size: 1.2rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .btn-hero-primary, .btn-hero-secondary {
+                width: 100%;
+                padding: 18px 40px;
+                font-size: 1.1rem;
+            }
+
+            .section-title {
+                font-size: 2.2rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .step {
+                flex-direction: column !important;
+                margin-bottom: 40px;
+            }
+
+            .step-content {
+                margin: 20px 0 0 0 !important;
+            }
+
+            .impact-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animación de scroll suave */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navegación fija agregada -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">♻️ EcoGestión</div>
+            <div class="nav-links">
+                <a href="#features">Características</a>
+                <a href="#how-it-works">Cómo Funciona</a>
+                <a href="auth.html" class="nav-btn">Comenzar</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>♻️ EcoGestión</h1>
+            <p class="subtitle">Gestiona residuos y construye hábitos sostenibles</p>
+            <div class="hero-buttons">
+                <a href="auth.html" class="btn-hero-primary">Comenzar Ahora</a>
+                <a href="#features" class="btn-hero-secondary">Conocer Más</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Características Principales</h2>
+            <p class="section-subtitle">Todo lo que necesitas para un estilo de vida sostenible</p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">✅</div>
+                    <h3>Gestión de Hábitos</h3>
+                    <p>Crea y sigue hábitos de reciclaje personalizados. Mantén rachas, completa retos y mide tu progreso diario.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>Reportes Comunitarios</h3>
+                    <p>Reporta problemas de residuos en tu comunidad. Ayuda a resolver acumulaciones de basura y contenedores llenos.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Educación Ambiental</h3>
+                    <p>Aprende sobre clasificación de residuos, las 3R y mejores prácticas ambientales con recursos educativos.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Sistema de Logros</h3>
+                    <p>Desbloquea logros mientras contribuyes al medio ambiente. Compite amigablemente con la comunidad.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Retos Sostenibles</h3>
+                    <p>Participa en desafíos como "Semana Zero Waste" o "Maestro del Reciclaje" y suma puntos.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Estadísticas</h3>
+                    <p>Visualiza tu impacto ambiental con gráficas de progreso, rachas y contribuciones comunitarias.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">Cómo Funciona</h2>
+            <p class="section-subtitle">Comienza en 4 simples pasos</p>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Regístrate</h3>
+                        <p>Crea tu cuenta con un nickname único, contraseña segura y elige tu avatar personalizado de la colección ecológica.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Define tus hábitos</h3>
+                        <p>Agrega hábitos de reciclaje que quieras seguir: orgánicos, plásticos, papel, vidrio y más. Personaliza tu rutina.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Sigue tu progreso</h3>
+                        <p>Completa tus hábitos diarios, mantén rachas impresionantes y desbloquea logros mientras ayudas al planeta.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Contribuye a tu comunidad</h3>
+                        <p>Reporta problemas de residuos en tu área y colabora con otros para resolver situaciones ambientales.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2>¿Listo para hacer la diferencia?</h2>
+            <p>Únete a nuestra comunidad y comienza tu viaje hacia un estilo de vida más sostenible. Es gratis y fácil de usar.</p>
+            <a href="auth.html" class="btn-hero-primary">Crear Cuenta Gratis</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>♻️ EcoGestión 2025 - Sistema de Gestión de Residuos Sólidos</p>
+            <p>Reduce • Reutiliza • Recicla • Reporta</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

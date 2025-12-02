@@ -1,0 +1,4394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>♻️ Sistema de integral de hábitos verdes</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --color-primary: #10b981;
+            --color-secondary: #059669;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --color-bg: #0a0e27;
+            --color-surface: rgba(255, 255, 255, 0.05);
+            --color-text: #e5e7eb;
+            --color-text-secondary: #9ca3af;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            --border: rgba(255, 255, 255, 0.18);
+            --color-bg-secondary: rgba(255, 255, 255, 0.03);
+            --color-primary-dark: #067e55;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: var(--color-text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 25px 30px;
+        }
+
+        /* Header */
+        header {
+            background: var(--color-surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.3), transparent);
+            animation: slideGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes slideGlow {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Corrigiendo subtítulo del header */
+        header p {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.1rem;
+        }
+
+        /* Añadido perfil de usuario en header */
+        .user-profile {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Aumentando tamaño del avatar en header a 100px */
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            border: 3px solid var(--color-primary);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .user-info h3 {
+            color: var(--color-primary);
+            margin-bottom: 5px;
+        }
+
+        .user-info p {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .btn-logout {
+            padding: 10px 20px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid #ef4444;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Sidebar Navigation */
+        .layout-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 25px;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            background: var(--color-surface);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar h3 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-nav button {
+            width: 100%;
+            padding: 14px 18px;
+            background: transparent;
+            color: var(--color-text);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-nav button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--border);
+        }
+
+        .sidebar-nav button.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            box-shadow: 0 5px 15px rgba(50, 184, 198, 0.3);
+        }
+
+        .main-content {
+            min-width: 0;
+        }
+
+        
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            background: var(--color-surface);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 10px;
+        }
+
+        .nav-tab {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 20px;
+            background: transparent;
+            color: var(--color-text);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            box-shadow: 0 5px 15px rgba(50, 184, 198, 0.3);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .sub-tab-content {
+            display: none;
+        }
+
+        .sub-tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-surface);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+            border-color: rgba(50, 184, 198, 0.3);
+        }
+
+        .card h2 {
+            margin-bottom: 25px;
+            font-size: 1.9rem;
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(50, 184, 198, 0.15), rgba(33, 128, 141, 0.08));
+            border: 1px solid rgba(50, 184, 198, 0.3);
+            border-radius: 16px;
+            padding: 30px 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(50, 184, 198, 0.3);
+            border-color: var(--color-primary);
+        }
+
+        .stat-card .value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin: 15px 0;
+            text-shadow: 0 2px 10px rgba(50, 184, 198, 0.3);
+        }
+
+        .stat-card .label {
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--color-text);
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: white;
+            padding: 10px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Buttons */
+        button[type="submit"],
+        .btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(50, 184, 198, 0.3);
+        }
+
+        button[type="submit"]:hover,
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(50, 184, 198, 0.4);
+        }
+
+        /* Habits List */
+        .habits-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .habit-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .habit-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .habit-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .habit-icon {
+            font-size: 2rem;
+        }
+
+        .habit-details h4 {
+            margin-bottom: 5px;
+            color: var(--color-primary);
+        }
+
+        .habit-details p {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+        }
+
+        .habit-streak {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+            border-radius: 10px;
+        }
+
+        .habit-streak .number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--color-success);
+        }
+
+        .habit-streak .label {
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+        }
+
+        .habit-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--color-text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-small:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-complete {
+            background: linear-gradient(135deg, var(--color-success), #059669);
+            color: white;
+            border: none;
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, var(--color-danger), #dc2626);
+            color: white;
+            border: none;
+        }
+
+        /* Challenges */
+        .challenges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .challenge-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .challenge-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(50, 184, 198, 0.2);
+        }
+
+        .challenge-card h3 {
+            margin-bottom: 10px;
+            color: var(--color-primary);
+        }
+
+        .challenge-progress {
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* Achievements */
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .achievement-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .achievement-card.unlocked {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+            border-color: #fbbf24;
+        }
+
+        .achievement-card.locked {
+            opacity: 0.4;
+            filter: grayscale(1);
+        }
+
+        .achievement-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .achievement-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--color-primary);
+        }
+
+        .achievement-desc {
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* Reports */
+        .report-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .report-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .report-card h3 {
+            margin-bottom: 15px;
+            color: var(--color-primary);
+        }
+
+        .report-card p {
+            margin: 8px 0;
+            color: var(--color-text-secondary);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-reportado {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+
+        .status-en-proceso {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+        }
+
+        .status-resuelto {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-secondary);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--color-text);
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+            border: 1px solid var(--color-success);
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            color: var(--color-success);
+            font-weight: 500;
+        }
+
+        /* Guide Section */
+        .guide-section {
+            margin-bottom: 30px;
+        }
+
+        .guide-section h3 {
+            color: var(--color-primary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .guide-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .guide-section ul li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .guide-section ul li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--color-primary);
+            font-weight: bold;
+        }
+
+        /* Dashboard Layout */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .dashboard-main {
+            min-width: 0;
+        }
+
+        .dashboard-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Mini Widgets */
+        .mini-challenge {
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mini-challenge:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .mini-challenge h4 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            color: var(--color-text);
+        }
+
+        .mini-achievement {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mini-achievement:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .mini-achievement .achievement-icon {
+            font-size: 2rem;
+        }
+
+        .mini-achievement strong {
+            display: block;
+            color: var(--color-primary);
+            font-size: 0.95rem;
+        }
+
+        .mini-achievement p {
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+            margin: 0;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 39, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--color-primary);
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Community Cards */
+        .community-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .community-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(50, 184, 198, 0.3);
+        }
+
+        .community-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .community-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .community-user-avatar {
+            font-size: 2rem;
+        }
+
+        .community-user-name {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .community-date {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .community-content {
+            margin: 15px 0;
+        }
+
+        .community-content h4 {
+            color: var(--color-text);
+            margin-bottom: 8px;
+        }
+
+        .community-content p {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+
+        .community-image {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .community-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .verify-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--color-primary);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .verify-button:hover {
+            background: rgba(16, 185, 129, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .verify-button.verified {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: var(--color-primary);
+            cursor: default;
+        }
+
+        .verify-count {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--color-text-secondary);
+        }
+
+        .badge-verified {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+            border: 1px solid var(--color-primary);
+            border-radius: 20px;
+            color: var(--color-primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .form-image-upload {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .form-image-upload:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--color-primary);
+        }
+
+        .image-preview {
+            max-width: 300px;
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+
+        /* Community Feed Styles */
+        .community-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .community-post {
+            background: var(--color-surface);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .community-post:hover {
+            border-color: var(--color-primary);
+            box-shadow: 0 5px 15px rgba(50, 184, 198, 0.2);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .post-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 2px solid var(--color-primary);
+        }
+
+        .post-user-info {
+            flex: 1;
+        }
+
+        .post-nickname {
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .post-time {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .post-content {
+            margin-bottom: 15px;
+        }
+
+        .post-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .verify-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .verify-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(50, 184, 198, 0.4);
+        }
+
+        .verify-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .evidence-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .upload-evidence-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-evidence-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--color-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            color: var(--color-primary);
+            font-size: 1.4rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--color-text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--color-text);
+        }
+
+        .file-input-label:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .file-name-display {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 8px;
+            color: var(--color-primary);
+            font-size: 0.9rem;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(50, 184, 198, 0.3);
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(50, 184, 198, 0.4);
+        }
+        
+        .habit-card {
+            background: var(--color-surface);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .habit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(50, 184, 198, 0.2);
+            border-color: var(--color-primary);
+        }
+        .habit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .habit-category {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 5px;
+        }
+        .habit-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+        .habit-streak {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2));
+            color: var(--color-warning);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .habit-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+        }
+        .habit-details span {
+            margin-right: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .layout-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                top: 0;
+            }
+
+            .sidebar-nav {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .challenges-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .achievements-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-sidebar {
+                order: -1;
+            }
+        }
+
+        /* NUEVOS ESTILOS DE LA ACTUALIZACIÓN */
+
+        /* Estilos para el loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 14, 39, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border-top-color: var(--color-primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Estilos para la estructura principal y contenido */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--color-surface);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--color-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            border: 2px solid var(--color-primary);
+        }
+
+        .logout-btn {
+            padding: 8px 15px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid var(--color-danger);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .content {
+            flex-grow: 1;
+        }
+
+        .card {
+            background: var(--color-surface);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(50, 184, 198, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(50, 184, 198, 0.4);
+        }
+
+        /* Agregando estilos para las tarjetas de hábitos rápidos con colores verdes */
+        /* CHANGE: Mejorando el grid de hábitos rápidos para mejor distribución del espacio */
+        .quick-habits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .quick-habit-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.2));
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            color: white;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .quick-habit-card.selected {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.5), rgba(5, 150, 105, 0.4));
+            border-color: var(--color-primary);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .quick-habit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+            border-color: var(--color-primary);
+        }
+
+        .quick-habit-card .emoji {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        .quick-habit-card h3 {
+            color: var(--color-primary);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .quick-habit-card p {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+
+    
+
+        /* Cambiando colores de tarjetas de hábitos rápidos para que sean más acordes a la estética */
+        .quick-habit-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.2));
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            color: white;
+        }
+
+        .quick-habit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+            border-color: var(--color-primary);
+        }
+
+        .quick-habit-card .quick-habit-emoji {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .quick-habit-card .quick-habit-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+
+        .quick-habit-card .quick-habit-freq {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .habit-item {
+            background: var(--color-bg-secondary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .report-item {
+            background: var(--color-bg-secondary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .community-post {
+            background: var(--color-bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .post-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .post-user-info {
+            flex: 1;
+        }
+
+        .post-nickname {
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+
+        .post-time {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .evidence-badge {
+            background: var(--color-primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .post-content {
+            margin-bottom: 15px;
+        }
+
+        .post-image {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .post-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .verify-count {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .verify-btn {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .verify-btn:hover:not(:disabled) {
+            background: var(--color-primary-dark);
+        }
+
+        .verify-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .comments-section, .resolution-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .comment-item, .resolution-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: var(--color-bg-primary);
+            border-radius: 8px;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: var(--color-bg);
+            border: 1px solid var(--border);
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: var(--color-primary);
+            text-align: center;
+            font-size: 1.6rem;
+        }
+
+        .close {
+            color: var(--color-text-secondary);
+            float: right;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--color-text);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="file"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .form-group input[type="file"] {
+            padding: 10px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn-submit { /* Renamed from button[type="submit"] for clarity */
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(50, 184, 198, 0.3);
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(50, 184, 198, 0.4);
+        }
+
+        /* Mejorando estilos del input type file para que sean más estéticos */
+        .form-group input[type="file"] {
+            padding: 12px 15px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px dashed var(--color-primary);
+            border-radius: 10px;
+            color: var(--color-text);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input[type="file"]:hover {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--color-secondary);
+        }
+
+        .form-group input[type="file"]::file-selector-button {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input[type="file"]::file-selector-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        /* Agregado estilo para notificaciones toast */
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4);
+            z-index: 10000;
+            animation: slideInRight 0.5s ease, fadeOut 0.5s ease 2.5s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .toast-notification.error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95));
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+        }
+        
+        /* Agregando estilos para previsualización de imágenes */
+        .file-preview {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .file-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            border: 2px solid var(--color-primary);
+        }
+
+        /* Estilos para las publicaciones de comunidad */
+        .community-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .community-post {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .community-post:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .post-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 2px solid var(--color-primary);
+        }
+
+        .post-user-info {
+            flex: 1;
+        }
+
+        .post-nickname {
+            color: var(--color-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .post-time {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .evidence-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .post-content {
+            margin-bottom: 15px;
+        }
+
+        .post-content p {
+            margin: 8px 0;
+            color: var(--color-text);
+        }
+
+        .post-image {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 10px;
+            margin-top: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .post-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .verify-count {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .verify-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .verify-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .verify-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .resolution-section, .comments-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .resolution-item, .comment-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .resolution-item:last-child, .comment-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        /* CHANGE: Agregando estilo para tarjeta seleccionada */
+        .quick-habit-card.selected {
+            border: 3px solid var(--color-primary);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+            transform: translateY(-5px) scale(1.05);
+        }
+
+        /* CHANGE: Aumentando el tamaño del avatar del usuario en el header */
+        /* already handled in .user-avatar declaration above */
+
+        /* CHANGE: Quitando el texto "Miembro activo" */
+        /* No specific CSS rule to remove, but it's removed from the HTML by the script */
+
+        /* CHANGE: Agregando estilo para previsualización de archivos */
+        .file-preview {
+            margin-top: 10px;
+        }
+
+        /* Ajustando colores de las estadísticas para mantener estética de la plataforma */
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.2);
+            border-color: var(--color-primary);
+        }
+
+        .stat-card .value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin: 15px 0;
+        }
+
+        .stat-card .label {
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Ajustando progreso semanal para estética sutil */
+        .weekly-progress-container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .weekly-progress-container:hover {
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .weekly-progress-container h3 {
+            color: var(--color-primary);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .progress-circle-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .progress-circle {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .progress-circle svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-circle-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 12;
+        }
+
+        .progress-circle-fill {
+            fill: none;
+            stroke: url(#progressGradient);
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .progress-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .progress-label {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            margin-top: 5px;
+        }
+
+        .progress-breakdown {
+            width: 100%;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .breakdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+        }
+
+        .breakdown-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .breakdown-dot.habits {
+            background: var(--color-primary);
+        }
+
+        .breakdown-dot.reports {
+            background: var(--color-secondary);
+        }
+
+        /* Agregando estilos para retos semanales */
+        .weekly-challenges-container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .weekly-challenges-container:hover {
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .weekly-challenges-container h3 {
+            color: var(--color-primary);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .challenges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .challenge-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .challenge-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--color-primary), var(--color-secondary));
+        }
+
+        .challenge-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
+            border-color: var(--color-primary);
+        }
+
+        .challenge-item h4 {
+            color: var(--color-primary);
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        .challenge-item p {
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            padding-left: 10px;
+        }
+        
+        /* Agregando estilos para retos dinámicos con barras de progreso */
+        .challenges-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .challenge-card-dynamic {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .challenge-card-dynamic::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--color-primary);
+        }
+
+        .challenge-card-dynamic:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.15);
+            border-color: var(--color-primary);
+        }
+
+        .challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-left: 10px;
+        }
+
+        .challenge-header h4 {
+            color: var(--color-primary);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .challenge-counter {
+            color: var(--color-primary);
+            font-weight: 600;
+            font-size: 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .challenge-desc {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            margin: 0 0 12px 10px;
+            line-height: 1.4;
+        }
+
+        .challenge-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-left: 10px;
+            width: calc(100% - 10px);
+        }
+
+        .challenge-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Adding styles for achievements section */
+        .achievements-container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 35px;
+            margin-top: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .achievements-container:hover {
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .achievements-container h3 {
+            color: var(--color-primary);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .achievement-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .achievement-item.unlocked {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05));
+            border-color: var(--color-primary);
+        }
+
+        .achievement-item.locked {
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        .achievement-emoji {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .achievement-title {
+            color: var(--color-text);
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .achievement-desc {
+            color: var(--color-text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .achievement-check {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: var(--color-primary);
+            font-size: 1.2rem;
+        }
+
+        /* CHANGE: Added verification success animation for when evidence reaches 3 verifications */
+        @keyframes verificationSuccess {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+        }
+
+        .verification-success {
+            animation: verificationSuccess 0.6s ease-out forwards;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Cargando...</p>
+        </div>
+    </div>
+
+    <div class="container" id="mainContent" style="display: none;">
+        <header>
+            <div class="header-content">
+                <h1>♻️ EcoTrack</h1>
+                <p>Reduce • Reutiliza • Recicla • Reporta</p>
+            </div>
+            <div class="user-profile">
+                <div id="userAvatar" class="user-avatar"></div>
+                <div class="user-info">
+                    <h3 id="userNickname"></h3>
+                    <!-- Quitando "Miembro activo" -->
+                </div>
+                <button onclick="logout()" class="btn-logout">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <div class="layout-container">
+            <aside class="sidebar">
+                <h3>🗂️ Navegación</h3>
+                <div class="sidebar-nav">
+                    <button class="active menu-item" onclick="showTab('dashboard')">📊 Dashboard</button>
+                    <button class="menu-item" onclick="showTab('habits')">✅ Mis Hábitos</button>
+                    <button class="menu-item" onclick="showTab('reports')">📝 Reportes</button>
+                    <button class="menu-item" onclick="showTab('community')">🌍 Comunidad</button>
+                    <button class="menu-item" onclick="showTab('education')">📚 Educación</button>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <!-- DASHBOARD -->
+                <div id="dashboard" class="tab-content active">
+                    <div id="dashboard-content">
+                        <!-- Dashboard content will be loaded here by loadDashboard() -->
+                    </div>
+                </div>
+
+                <!-- MIS HÁBITOS -->
+                <div id="habits" class="tab-content">
+                    <!-- Corrigiendo orden de subsecciones: Mis Hábitos, Hábitos Rápidos, Personalizado -->
+                    <div class="nav-tabs">
+                        <button class="nav-tab active" onclick="showSubTab('habitsList', this)">📊 Mis Hábitos</button>
+                        <button class="nav-tab" onclick="showSubTab('habitsQuick', this)">⚡ Hábitos Rápidos</button>
+                        <button class="nav-tab" onclick="showSubTab('habitsCustom', this)">➕ Personalizado</button>
+                    </div>
+
+                    <div id="habitsList" class="sub-tab-content active">
+                        <div class="card">
+                            <h2>📊 Mis Hábitos Registrados</h2>
+                            <div id="myHabitsList"></div>
+                        </div>
+                    </div>
+
+                    <div id="habitsQuick" class="sub-tab-content">
+                        <div class="card">
+                            <h2>⚡ Hábitos Rápidos</h2>
+                            <p style="color: var(--color-text-secondary); margin-bottom: 20px;">
+                                Selecciona un hábito predefinido y agrégalo con un solo clic
+                            </p>
+                            <!-- CHANGE: Mejorando el grid de hábitos rápidos para mejor distribución del espacio -->
+                            <div id="quickHabitsGrid" class="quick-habits-grid"></div>
+                            
+                            <!-- Agregando módulos universales de frecuencia y botón de registrar -->
+                            <div style="margin-top: 30px; padding: 20px; background: rgba(16, 185, 129, 0.1); border-radius: 15px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                                <div class="form-group">
+                                    <label for="quickHabitUniversalFreq">📅 Frecuencia para el hábito seleccionado</label>
+                                    <select id="quickHabitUniversalFreq" style="padding: 12px; border-radius: 10px; background: var(--color-surface); border: 1px solid var(--border); color: white; width: 100%;">
+                                        <option value="diario">Diario</option>
+                                        <option value="semanal">Semanal</option>
+                                        <option value="mensual">Mensual</option>
+                                    </select>
+                                </div>
+                                <button id="quickHabitUniversalBtn" class="btn-primary" style="width: 100%; margin-top: 15px;" onclick="addSelectedQuickHabit()">
+                                    ➕ Agregar Hábito Seleccionado
+                                </button>
+                                <p id="quickHabitSelectedInfo" style="color: var(--color-text-secondary); margin-top: 10px; text-align: center; font-size: 0.9rem;">
+                                    Haz clic en una tarjeta para seleccionarla
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="habitsCustom" class="sub-tab-content">
+                        <div class="card">
+                            <h2>➕ Agregar Hábito Personalizado</h2>
+                            <!-- Cambiando layout a vertical removiendo form-grid -->
+                            <form id="habitForm">
+                                <div class="form-group">
+                                    <label>🗂️ Categoría</label>
+                                    <select id="habitCategory" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="organico">🍂 Orgánico</option>
+                                        <option value="plastico">🥤 Plástico</option>
+                                        <option value="papel">📄 Papel/Cartón</option>
+                                        <option value="vidrio">🍾 Vidrio</option>
+                                        <option value="metal">🥫 Metal</option>
+                                        <option value="electronico">🔌 Electrónico</option>
+                                        <option value="peligroso">⚠️ Peligroso</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>📝 Descripción del Hábito</label>
+                                    <input type="text" id="habitDescription" required placeholder="Ej: Separar botellas de plástico diariamente">
+                                </div>
+                                <div class="form-group">
+                                    <label>📊 Cantidad/Meta</label>
+                                    <input type="number" id="habitQuantity" required placeholder="Ej: 5">
+                                </div>
+                                <div class="form-group">
+                                    <label>📅 Frecuencia</label>
+                                    <select id="habitFrequency" required>
+                                        <option value="diario">Diario</option>
+                                        <option value="semanal">Semanal</option>
+                                        <option value="mensual">Mensual</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn-primary">➕ Agregar Hábito</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REPORTES -->
+                <div id="reports" class="tab-content">
+                    <!-- Agregando subsecciones horizontales para Reportes -->
+                    <div class="nav-tabs">
+                        <button class="nav-tab active" onclick="showSubTab('reportsNew', this)">📝 Nuevo Reporte</button>
+                        <button class="nav-tab" onclick="showSubTab('reportsList', this)">📋 Mis Reportes</button>
+                    </div>
+
+                    <div id="reportsNew" class="sub-tab-content active">
+                        <div class="card">
+                            <h2>📝 Nuevo Reporte</h2>
+                            <form id="reportForm">
+                                <!-- Agregando campo de título -->
+                                <div class="form-group">
+                                    <label for="reportTitle">📌 Título del Reporte *</label>
+                                    <input type="text" id="reportTitle" required placeholder="Ej: Basura acumulada en parque central">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="reportLocation">📍 Ubicación del Problema *</label>
+                                    <input type="text" id="reportLocation" required placeholder="Dirección o referencia">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="reportDescription">📝 Descripción (opcional)</label>
+                                    <textarea id="reportDescription" rows="4" placeholder="Describe el problema (opcional)"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="reportFile">📷 Foto del Problema *</label>
+                                    <input type="file" id="reportFile" accept="image/*" required onchange="previewImage(event, 'reportFilePreview')">
+                                    <!-- Agregando previsualización de imagen -->
+                                    <div id="reportFilePreview" class="file-preview"></div>
+                                </div>
+
+                                <button type="submit" class="btn-submit">Enviar Reporte</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="reportsList" class="sub-tab-content">
+                        <div class="card">
+                            <h2>📋 Mis Reportes</h2>
+                            <div id="myReportsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EDUCACIÓN -->
+                <div id="education" class="tab-content">
+                    <div class="card">
+                        <h2>📚 Guía de Gestión de Residuos</h2>
+                        
+                        <div class="guide-section">
+                            <h3>♻️ Las 3R: Reducir, Reutilizar, Reciclar</h3>
+                            <p><strong>Reducir:</strong> Evita generar residuos innecesarios. Compra solo lo necesario y prefiere productos con menos empaque.</p>
+                            <p><strong>Reutilizar:</strong> Dale una segunda vida a los objetos antes de desecharlos.</p>
+                            <p><strong>Reciclar:</strong> Separa correctamente los residuos para que puedan ser procesados.</p>
+                        </div>
+
+                        <div class="guide-section">
+                            <h3>🗑️ Clasificación de Residuos Sólidos</h3>
+                            <p><strong>🍂 Orgánicos:</strong> Restos de comida, cáscaras, hojas. Pueden compostarse.</p>
+                            <p><strong>🥤 Plásticos:</strong> Botellas, envases, bolsas. Verifica el símbolo de reciclaje.</p>
+                            <p><strong>📄 Papel/Cartón:</strong> Periódicos, cajas, cuadernos. Deben estar limpios y secos.</p>
+                            <p><strong>🍾 Vidrio:</strong> Botellas, frascos. Enjuaga antes de reciclar.</p>
+                            <p><strong>🥫 Metales:</strong> Latas de aluminio y acero.</p>
+                            <p><strong>🔌 Electrónicos:</strong> Requieren gestión especial. No los tires a la basura común.</p>
+                            <p><strong>⚠️ Peligrosos:</strong> Pilas, medicamentos, pinturas. Lleva a puntos de recolección especiales.</p>
+                        </div>
+
+                        <div class="guide-section">
+                            <h3>💡 Consejos Prácticos</h3>
+                            <ul>
+                                <li>Usa bolsas reutilizables para las compras</li>
+                                <li>Evita productos de un solo uso</li>
+                                <li>Composta tus residuos orgánicos</li>
+                                <li>Limpia los envases antes de reciclar</li>
+                                <li>Separa los residuos desde casa</li>
+                                <li>Dona lo que ya no uses pero esté en buen estado</li>
+                            </ul>
+                        </div>
+
+                        <div class="guide-section">
+                            <h3>🌍 Impacto Ambiental</h3>
+                            <p>Una tonelada de papel reciclado ahorra 17 árboles, 26,000 litros de agua y 4,000 kWh de energía.</p>
+                            <p>Reciclar una lata de aluminio ahorra suficiente energía para mantener encendida una bombilla durante 3 horas.</p>
+                            <p>El 40% de los residuos domésticos son orgánicos y pueden convertirse en compost.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comunidad unificada sin separación de tabs -->
+                <!-- COMMUNITY -->
+                <div id="community" class="tab-content">
+                    <div class="card">
+                        <h2>🌐 Comunidad</h2>
+                        <p style="color: var(--color-text-secondary); margin-bottom: 20px;">
+                            Aquí puedes ver evidencias de hábitos y reportes de otros usuarios. Verifica las publicaciones para ayudar a la comunidad.
+                        </p>
+                        <div id="communityFeed" class="community-feed"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para subir evidencia de hábito -->
+    <div id="habitEvidenceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('habitEvidenceModal')">&times;</span>
+            <h2>📸 Subir Evidencia de Hábito</h2>
+            <form id="habitEvidenceForm" onsubmit="submitHabitEvidence(event)">
+                <input type="hidden" id="habitEvidenceHabitId">
+                <div class="form-group">
+                    <label for="habitEvidenceFile">Foto de la evidencia *</label>
+                    <input type="file" id="habitEvidenceFile" accept="image/*" required onchange="previewImage(event, 'habitEvidenceFilePreview')">
+                    <!-- Agregando previsualización -->
+                    <div id="habitEvidenceFilePreview" class="file-preview"></div>
+                </div>
+                <div class="form-group">
+                    <label for="habitEvidenceComment">Comentario (opcional)</label>
+                    <textarea id="habitEvidenceComment" rows="3" placeholder="Describe tu evidencia"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">📤 Subir Evidencia</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para subir evidencia de resolución -->
+    <div id="resolutionEvidenceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('resolutionEvidenceModal')">&times;</span>
+            <h2>✅ Subir Evidencia de Resolución</h2>
+            <form id="resolutionEvidenceForm" onsubmit="submitResolutionEvidence(event)">
+                <input type="hidden" id="resolutionEvidenceReportId">
+                <div class="form-group">
+                    <label for="resolutionEvidenceFile">Foto de la resolución *</label>
+                    <input type="file" id="resolutionEvidenceFile" accept="image/*" required onchange="previewImage(event, 'resolutionEvidenceFilePreview')">
+                    <!-- Agregando previsualización -->
+                    <div id="resolutionEvidenceFilePreview" class="file-preview"></div>
+                </div>
+                <div class="form-group">
+                    <label for="resolutionEvidenceDescription">Descripción (opcional)</label>
+                    <textarea id="resolutionEvidenceDescription" rows="3" placeholder="Describe cómo se resolvió"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">📤 Subir Resolución</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para comentar en reporte -->
+    <div id="commentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('commentModal')">&times;</span>
+            <h2>💬 Agregar Comentario</h2>
+            <form id="commentForm" onsubmit="submitComment(event)">
+                <input type="hidden" id="commentReportId">
+                <div class="form-group">
+                    <label for="commentText">Comentario</label>
+                    <textarea id="commentText" rows="4" required placeholder="Escribe tu comentario"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">💬 Comentar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Nuevo modal para comentar en evidencias de hábitos -->
+    <div id="habitCommentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('habitCommentModal')">&times;</span>
+            <h2>💬 Agregar Comentario</h2>
+            <form id="habitCommentForm" onsubmit="submitHabitComment(event)">
+                <input type="hidden" id="habitCommentEvidenceId">
+                <div class="form-group">
+                    <label for="habitCommentText">Comentario</label>
+                    <textarea id="habitCommentText" rows="4" required placeholder="Escribe tu comentario"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">💬 Comentar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar eliminación de hábito -->
+    <div id="deleteHabitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚠️ Confirmar Eliminación</h3>
+                <button class="close-modal" onclick="closeModal('deleteHabitModal')">&times;</button>
+            </div>
+            <p style="color: var(--color-text); margin-bottom: 20px;">¿Estás seguro de que deseas eliminar este hábito? Esta acción no se puede deshacer.</p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn-secondary" onclick="closeModal('deleteHabitModal')" style="background: var(--color-card); color: var(--color-text);">
+                    Cancelar
+                </button>
+                <button class="btn-primary" id="confirmDeleteBtn" style="background: var(--color-danger); border: none;">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar eliminación de reporte -->
+    <div id="deleteReportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚠️ Confirmar Eliminación</h3>
+                <button class="close-modal" onclick="closeModal('deleteReportModal')">&times;</button>
+            </div>
+            <p style="color: var(--color-text); margin-bottom: 20px;">¿Estás seguro de que deseas eliminar este reporte? Esta acción no se puede deshacer.</p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn-secondary" onclick="closeModal('deleteReportModal')" style="background: var(--color-card); color: var(--color-text);">
+                    Cancelar
+                </button>
+                <!-- Conectando el botón de eliminar con la función confirmDeleteReport() -->
+                <button class="btn-primary" id="confirmDeleteReportBtn" onclick="confirmDeleteReport()" style="background: var(--color-danger); border: none;">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://wakkelygkiiazszkiuvl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indha2tlbHlna2lpYXpzemtpdXZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3Mzk4NTEsImV4cCI6MjA3ODMxNTg1MX0.PPLMLiB5GnzPX83JCYFfRfB2C1tmxqp2MECxQuYTg-8';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentUser = null;
+
+        let selectedQuickHabitIndex = null;
+
+        // Mensajes motivadores para el toast
+        const motivationalMessages = [
+            '¡Excelente! Sigamos reciclando juntos 🌱',
+            '¡Bien hecho! Cada acción cuenta para el planeta 🌍',
+            '¡Genial! Tu compromiso inspira a otros 💚',
+            '¡Increíble! Tu esfuerzo vale oro 💎',
+            '¡Fantástico! Juntos cuidamos nuestro hogar 🏡',
+            '¡Maravilloso! El planeta te agradece 🌟',
+            '¡Perfecto! Cada paso es importante 👣',
+            '¡Bravo! Eres un héroe ambiental 🦸',
+            '¡Sigue así! Estamos construyendo un futuro mejor 🌈',
+            '¡Wow! Tu esfuerzo vale oro 💎'
+        ];
+
+        // CHANGE: Actualizando hábitos rápidos con opciones más orientadas a gestión de residuos sólidos
+        const quickHabits = [
+            { emoji: '♻️', title: 'Reciclaje en casa', description: 'Clasifica papel, cartón, plástico, vidrio y metales para el reciclaje.', category: 'reciclaje', quantity: 1, freq: 'diario'},
+            { emoji: '🌿', title: 'Compostaje doméstico', description: 'Convierte residuos orgánicos en compost para plantas o huerto.', category: 'compostaje', quantity: 1, freq: 'diario'},
+            { emoji: '🔄', title: 'Reutilización creativa', description: 'Da una segunda vida a frascos, cajas y objetos antes de desecharlos.', category: 'reutilizacion', quantity: 1, freq: 'diario'},
+            { emoji: '📦', title: 'Consumo responsable', description: 'Elige solo lo que necesitas y prefiere productos con menos envolturas.', category: 'reduccion', quantity: 1, freq: 'diario'},
+            { emoji: '🛍️', title: 'Uso de bolsas reutilizables', description: 'Acude al mercado con bolsas de tela, canasta o carrito.', category: 'reduccion', quantity: 1, freq: 'semanal'},
+            { emoji: '🔋', title: 'Depósito de residuos peligrosos', description: 'Lleva pilas, baterías y electrónicos a puntos de acopio.', category: 'reciclaje', quantity: 1, freq: 'mensual'},
+            { emoji: '🔧', title: 'Reparación y restauración', description: 'Arregla objetos dañados antes de botarlos.', category: 'reutilizacion', quantity: 1, freq: 'diario'},
+            { emoji: '💡', title: 'Ahorro de energía en casa', description: 'Apaga luces y desconecta equipos que no estés usando.', category: 'reduccion', quantity: 1, freq: 'diario'},
+            { emoji: '🌳', title: 'Cuidado del agua y la naturaleza', description: 'Ahorra agua y participa en el cuidado de plantas y áreas verdes.', category: 'reduccion', quantity: 1, freq: 'mensual'},
+        ];
+
+        function getRandomMotivationalMessage() {
+            return motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+        }
+
+        function showToast(message, type = 'success', skipMotivational = false) {
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            
+            const fullMessage = (type === 'success' && !skipMotivational)
+                ? `${message} ${getRandomMotivationalMessage()}` 
+                : message;
+            
+            toast.innerHTML = `<span>${type === 'success' ? '✅' : '⚠️'}</span> ${fullMessage}`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        function previewImage(event, previewId) {
+            const file = event.target.files[0];
+            const previewContainer = document.getElementById(previewId);
+            
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewContainer.innerHTML = `
+                        <div style="margin-top: 15px;">
+                            <p style="color: var(--color-text-secondary); margin-bottom: 10px;">Vista previa:</p>
+                            <img src="${e.target.result}" alt="Vista previa" style="max-width: 100%; max-height: 300px; border-radius: 10px; border: 2px solid var(--color-primary);">
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.innerHTML = '';
+            }
+        }
+
+        async function checkAuth() {
+            const sessionData = localStorage.getItem('ecoGestionSession');
+            
+            if (!sessionData) {
+                window.location.href = 'landing.html';
+                return;
+            }
+            
+            try {
+                currentUser = JSON.parse(sessionData);
+                
+                const { data: userData, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('id', currentUser.userId)
+                    .single();
+                
+                if (error || !userData) {
+                    console.error('Error al cargar datos del usuario:', error);
+                    localStorage.removeItem('ecoGestionSession');
+                    window.location.href = 'landing.html';
+                    return;
+                }
+                
+                currentUser = {
+                    ...currentUser,
+                    avatar_emoji: userData.avatar_emoji,
+                    avatar_color: userData.avatar_color,
+                    nickname: userData.nickname
+                };
+                
+                const colors = userData.avatar_color.split(',');
+                document.getElementById('userNickname').textContent = userData.nickname;
+                const avatarElement = document.getElementById('userAvatar');
+                avatarElement.textContent = userData.avatar_emoji;
+                avatarElement.style.background = `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`;
+                
+                await loadDashboard(); 
+                await loadHabits();
+                renderQuickHabits(); 
+                await loadReports();
+                loadEducation();
+                await loadCommunity();
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+            } catch (error) {
+                console.error('Error de sesión:', error);
+                localStorage.removeItem('ecoGestionSession');
+                window.location.href = 'landing.html';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('ecoGestionSession');
+            window.location.href = 'landing.html';
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const activeTab = document.getElementById(tabName);
+            if (activeTab) {
+                activeTab.classList.add('active');
+                event.target.closest('.menu-item').classList.add('active');
+                
+                if (tabName === 'community') {
+                    loadCommunity();
+                }
+                if (tabName === 'habits') loadHabits();
+                if (tabName === 'reports') loadReports();
+                if (tabName === 'dashboard') loadDashboard(); 
+            }
+        }
+
+        function showSubTab(subTabName, targetElement = null) {
+            const parentTab = targetElement 
+                ? targetElement.closest('.tab-content')
+                : document.querySelector('.tab-content.active');
+            
+            if (!parentTab) {
+                console.error('[v0] No parent tab found');
+                return;
+            }
+            
+            parentTab.querySelectorAll('.sub-tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            parentTab.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const activeSubTab = document.getElementById(subTabName);
+            if (activeSubTab) {
+                activeSubTab.classList.add('active');
+                if (targetElement) {
+                    targetElement.classList.add('active');
+                } else {
+                    const correspondingButton = parentTab.querySelector(`[onclick*="'${subTabName}'"]`);
+                    if (correspondingButton) {
+                        correspondingButton.classList.add('active');
+                    }
+                }
+            }
+        }
+
+        document.getElementById('habitForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const habit = {
+                user_id: currentUser.userId,
+                category: document.getElementById('habitCategory').value,
+                description: document.getElementById('habitDescription').value,
+                quantity: parseInt(document.getElementById('habitQuantity').value),
+                frequency: document.getElementById('habitFrequency').value,
+                streak: 0,
+                completed_count: 0,
+                last_streak_date: null // Initialize last_streak_date to null
+            };
+            
+            const { data, error } = await supabaseClient
+                .from('habits')
+                .insert([habit])
+                .select();
+            
+            if (error) {
+                showToast('Error al registrar hábito: ' + error.message, 'error');
+                return;
+            }
+            
+            this.reset();
+            showToast('Hábito registrado exitosamente');
+            await loadHabits();
+        });
+
+        async function loadHabits() {
+            const { data: habits, error } = await supabaseClient
+                .from('habits')
+                .select('*')
+                .eq('user_id', currentUser.userId)
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error('Error al cargar hábitos:', error);
+                return;
+            }
+            
+            if (habits && habits.length > 0) {
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                
+                for (const habit of habits) {
+                    if (habit.last_streak_date && habit.streak > 0) {
+                        const lastStreakDateStr = habit.last_streak_date;
+                        
+                        // Calcular el día de ayer
+                        const yesterdayDate = new Date(today);
+                        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                        const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+                        
+                        // Si la última actualización no fue hoy ni ayer, resetear racha
+                        if (lastStreakDateStr !== todayStr && lastStreakDateStr !== yesterdayStr) {
+                            console.log('[v0] Reseteando racha del hábito:', habit.description);
+                            await supabaseClient
+                                .from('habits')
+                                .update({ 
+                                    streak: 0,
+                                    last_streak_date: null 
+                                })
+                                .eq('id', habit.id);
+                            
+                            // Actualizar el objeto local para mostrar el valor correcto
+                            habit.streak = 0;
+                        }
+                    }
+                }
+            }
+            
+            const container = document.getElementById('myHabitsList');
+            
+            if (!habits || habits.length === 0) {
+                container.innerHTML = '<p style="color: var(--color-text-secondary);">No tienes hábitos registrados aún.</p>';
+                return;
+            }
+            
+            container.innerHTML = habits.map(habit => `
+                <div class="habit-item">
+                    <div>
+                        <strong>${getCategoryIcon(habit.category)} ${habit.description}</strong>
+                        <p style="color: var(--color-text-secondary); margin: 5px 0;">
+                            ${habit.quantity} ${habit.frequency} | 🔥 Racha: ${habit.streak} | ✅ Completados: ${habit.completed_count}
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" onclick="openHabitEvidenceModal('${habit.id}')">
+                            📸 Subir Evidencia
+                        </button>
+                        <button class="btn-secondary" onclick="confirmDeleteHabit('${habit.id}')" style="background: var(--color-danger); border-color: var(--color-danger); border-radius: 10px;">
+                            🗑️ Eliminar
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        let habitToDelete = null;
+
+        function confirmDeleteHabit(habitId) {
+            habitToDelete = habitId;
+            document.getElementById('deleteHabitModal').style.display = 'flex';
+            document.getElementById('confirmDeleteBtn').onclick = () => deleteHabit(habitId);
+        }
+
+        async function deleteHabit(habitId) {
+            try {
+                if (!currentUser || !currentUser.userId) {
+                    showToast('No se pudo verificar tu identidad', 'error');
+                    return;
+                }
+                
+                const { data: habit } = await supabaseClient
+                    .from('habits')
+                    .select('user_id')
+                    .eq('id', habitId)
+                    .single();
+                
+                if (habit.user_id !== currentUser.userId) {
+                    showToast('No tienes permiso para eliminar este hábito', 'error');
+                    return;
+                }
+                
+                const { error } = await supabaseClient
+                    .from('habits')
+                    .delete()
+                    .eq('id', habitId);
+                
+                if (error) throw error;
+                
+                showToast('Se eliminó el hábito correctamente', 'success', true);
+                loadHabits();
+                closeModal('deleteHabitModal');
+            } catch (error) {
+                console.error('Error al eliminar hábito:', error);
+                showToast('Error al eliminar el hábito', 'error');
+            }
+        }
+
+
+        async function handleReportSubmit(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('reportTitle').value;
+            const location = document.getElementById('reportLocation').value;
+            const description = document.getElementById('reportDescription').value;
+            const fileInput = document.getElementById('reportFile');
+            
+            if (!fileInput.files || !fileInput.files[0]) {
+                showToast('Por favor selecciona una foto del problema', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const fileName = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                const fileUrl = event.target.result;
+                
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('reports')
+                        .insert([{
+                            user_id: currentUser.userId,
+                            title: title,
+                            location: location,
+                            description: description || null,
+                            file_url: fileUrl,
+                            file_name: fileName,
+                            priority: 'media',
+                            status: 'reportado'
+                        }])
+                        .select();
+                    
+                    if (error) throw error;
+                    
+                    showToast('Reporte enviado exitosamente.');
+                    document.getElementById('reportForm').reset();
+                    document.getElementById('reportFilePreview').innerHTML = '';
+                    await loadReports();
+                    await loadCommunity();
+                } catch (error) {
+                    console.error('Error al enviar reporte:', error);
+                    showToast('Error al enviar reporte: ' + error.message, 'error');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('reportForm').addEventListener('submit', handleReportSubmit);
+
+        async function loadReports() {
+            const { data: reports, error } = await supabaseClient
+                .from('reports')
+                .select('*')
+                .eq('user_id', currentUser.userId)
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error('[v0] Error al cargar reportes:', error);
+                return;
+            }
+            
+            const container = document.getElementById('myReportsList');
+            
+            if (!reports || reports.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No tienes reportes aún</h3><p>Crea tu primer reporte para ayudar a tu comunidad</p></div>';
+                return;
+            }
+            
+            container.innerHTML = reports.map(report => {
+                const createdDate = new Date(report.created_at);
+                const formattedDate = createdDate.toLocaleDateString('es-ES', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                <div class="report-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                        <div style="flex: 1;">
+                            <h3 style="margin-bottom: 5px;">${report.title}</h3>
+                            <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin: 0;">
+                                📅 ${formattedDate}
+                            </p>
+                        </div>
+                        <span class="status-badge status-${report.status}">${report.status}</span>
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <p><strong>📍 Ubicación:</strong> ${report.location}</p>
+                        ${report.description ? `<p><strong>📝 Descripción:</strong> ${report.description}</p>` : ''}
+                        <p><strong>🎯 Prioridad:</strong> <span style="text-transform: capitalize;">${report.priority || 'media'}</span></p>
+                    </div>
+                    
+                    ${report.file_url ? `
+                        <div style="margin: 15px 0;">
+                            <img src="${report.file_url}" alt="Foto del reporte" style="width: 100%; max-width: 400px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                        </div>
+                    ` : ''}
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                        <button onclick="showDeleteReportModal('${report.id}')" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                            <span>🗑️</span>
+                            <span>Eliminar</span>
+                        </button>
+                        ${report.status === 'reportado' ? `
+                            <div style="flex: 1; text-align: right; color: var(--color-text-secondary); font-size: 0.9rem;">
+                                ⏳ Esperando resolución de la comunidad
+                            </div>
+                        ` : report.status === 'en-proceso' ? `
+                            <div style="flex: 1; text-align: right; color: #fcd34d; font-size: 0.9rem;">
+                                🔄 En proceso de resolución
+                            </div>
+                        ` : `
+                            <div style="flex: 1; text-align: right; color: #10b981; font-size: 0.9rem;">
+                                ✅ Problema resuelto
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        async function loadCommunity() {
+            try {
+                const [evidencesResponse, reportsResponse] = await Promise.all([
+                    supabaseClient
+                        .from('habit_evidences')
+                        .select(`
+                            *,
+                            habits (category, description),
+                            users (nickname, avatar_emoji, avatar_color),
+                            habit_evidence_comments (
+                                id,
+                                comment,
+                                created_at,
+                                users (nickname, avatar_emoji, avatar_color)
+                            )
+                        `)
+                        .eq('is_verified', false)
+                        .order('created_at', { ascending: false }),
+                    
+                    supabaseClient
+                        .from('reports')
+                        .select(`
+                            *,
+                            users (nickname, avatar_emoji, avatar_color),
+                            report_comments (
+                                id,
+                                comment,
+                                created_at,
+                                users (nickname, avatar_emoji, avatar_color)
+                            ),
+                            resolution_evidences (
+                                id,
+                                file_url,
+                                description,
+                                verified_count,
+                                required_verifications,
+                                is_verified,
+                                created_at,
+                                user_id,
+                                users (nickname, avatar_emoji, avatar_color)
+                            )
+                        `)
+                        .eq('status', 'reportado')
+                        .order('created_at', { ascending: false })
+                ]);
+                
+                if (evidencesResponse.error) throw evidencesResponse.error;
+                if (reportsResponse.error) throw reportsResponse.error;
+                
+                const evidences = evidencesResponse.data || [];
+                const reports = reportsResponse.data || [];
+                
+                const allItems = [
+                    ...evidences.map(e => ({ ...e, type: 'habit', created_at: e.created_at })),
+                    ...reports.map(r => ({ ...r, type: 'report', created_at: r.created_at }))
+                ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                const container = document.getElementById('communityFeed');
+                
+                if (allItems.length === 0) {
+                    container.innerHTML = '<p style="color: var(--color-text-secondary);">No hay publicaciones en la comunidad aún.</p>';
+                    return;
+                }
+                
+                container.innerHTML = allItems.map(item => {
+                    if (item.type === 'habit') {
+                        return renderHabitEvidence(item);
+                    } else {
+                        return renderReport(item);
+                    }
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error al cargar comunidad:', error);
+            }
+        }
+
+        function renderHabitEvidence(evidence) {
+            const canVerify = evidence.user_id !== currentUser.userId;
+            const timeAgo = getTimeAgo(evidence.created_at);
+            const colors = evidence.users.avatar_color.split(',');
+            
+            let commentsHtml = '';
+            if (evidence.habit_evidence_comments && evidence.habit_evidence_comments.length > 0) {
+                commentsHtml = `
+                    <div class="comments-section">
+                        <h4 style="margin: 15px 0 10px 0;">Comentarios:</h4>
+                        ${evidence.habit_evidence_comments.map(comment => {
+                            const commentColors = comment.users.avatar_color.split(',');
+                            return `
+                                <div class="comment-item">
+                                    <div class="post-avatar" style="background: linear-gradient(135deg, ${commentColors[0]}, ${commentColors[1]}); width: 30px; height: 30px; font-size: 1rem;">
+                                        ${comment.users.avatar_emoji}
+                                    </div>
+                                    <div>
+                                        <strong>${comment.users.nickname}:</strong> ${comment.comment}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="community-post" data-evidence-id="${evidence.id}">
+                    <div class="post-header">
+                        <div class="post-avatar" style="background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});">
+                            ${evidence.users.avatar_emoji}
+                        </div>
+                        <div class="post-user-info">
+                            <div class="post-nickname">${evidence.users.nickname}</div>
+                            <div class="post-time">${timeAgo}</div>
+                        </div>
+                        <div class="evidence-badge" style="background: #10b981;">Evidencia de Hábito</div>
+                    </div>
+                    <div class="post-content">
+                        <p><strong>${getCategoryIcon(evidence.habits.category)} ${evidence.habits.description}</strong></p>
+                        ${evidence.comment ? `<p>💬 ${evidence.comment}</p>` : ''}
+                        <img src="${evidence.file_url}" alt="Evidencia" class="post-image">
+                    </div>
+                    ${commentsHtml}
+                    <div class="post-actions">
+                        <div class="verify-count">
+                            👥 ${evidence.verified_count}/${evidence.required_verifications} verificaciones
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="verify-btn" onclick="openHabitCommentModal('${evidence.id}')">
+                                💬 Comentar
+                            </button>
+                            <button class="verify-btn" 
+                                onclick="verifyEvidence('habit', '${evidence.id}')" 
+                                ${!canVerify ? 'disabled' : ''}>
+                                ✓ ${canVerify ? 'Verificar' : 'Eres el autor'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderReport(report) {
+            const timeAgo = getTimeAgo(report.created_at);
+            const colors = report.users.avatar_color.split(',');
+            const priorityColors = {
+                'baja': '#10b981',
+                'media': '#f59e0b',
+                'alta': '#ef4444'
+            };
+            
+            let resolutionsHtml = '';
+            if (report.resolution_evidences && report.resolution_evidences.length > 0) {
+                resolutionsHtml = `
+                    <div class="resolution-section">
+                        <h4 style="margin: 15px 0 10px 0;">Evidencias de Resolución:</h4>
+                        ${report.resolution_evidences.map(evidence => {
+                            const canVerify = evidence.user_id !== currentUser.userId;
+                            const evidenceColors = evidence.users.avatar_color.split(',');
+                            return `
+                                <div class="resolution-item" data-evidence-id="${evidence.id}">
+                                    <div class="post-header" style="margin-bottom: 10px;">
+                                        <div class="post-avatar" style="background: linear-gradient(135deg, ${evidenceColors[0]}, ${evidenceColors[1]}); width: 30px; height: 30px; font-size: 1rem;">
+                                            ${evidence.users.avatar_emoji}
+                                        </div>
+                                        <div class="post-user-info">
+                                            <div class="post-nickname" style="font-size: 0.9rem;">${evidence.users.nickname}</div>
+                                        </div>
+                                    </div>
+                                    ${evidence.description ? `<p style="margin-bottom: 10px;">${evidence.description}</p>` : ''}
+                                    <img src="${evidence.file_url}" alt="Resolución" class="post-image" style="max-width: 300px;">
+                                    <div class="post-actions" style="margin-top: 10px;">
+                                        <div class="verify-count">
+                                            👥 ${evidence.verified_count}/${evidence.required_verifications} verificaciones
+                                        </div>
+                                        <button class="verify-btn" 
+                                            onclick="verifyEvidence('resolution', '${evidence.id}')" 
+                                            ${!canVerify ? 'disabled' : ''}>
+                                            ✓ ${canVerify ? 'Verificar' : 'Eres el autor'}
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+            
+            let commentsHtml = '';
+            if (report.report_comments && report.report_comments.length > 0) {
+                commentsHtml = `
+                    <div class="comments-section">
+                        <h4 style="margin: 15px 0 10px 0;">Comentarios:</h4>
+                        ${report.report_comments.map(comment => {
+                            const commentColors = comment.users.avatar_color.split(',');
+                            return `
+                                <div class="comment-item">
+                                    <div class="post-avatar" style="background: linear-gradient(135deg, ${commentColors[0]}, ${commentColors[1]}); width: 30px; height: 30px; font-size: 1rem;">
+                                        ${comment.users.avatar_emoji}
+                                    </div>
+                                    <div>
+                                        <strong>${comment.users.nickname}:</strong> ${comment.comment}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="community-post">
+                    <div class="post-header">
+                        <div class="post-avatar" style="background: linear-gradient(135deg, ${colors[0]}, ${colors[1]});">
+                            ${report.users.avatar_emoji}
+                        </div>
+                        <div class="post-user-info">
+                            <div class="post-nickname">${report.users.nickname}</div>
+                            <div class="post-time">${timeAgo}</div>
+                        </div>
+                        <div class="evidence-badge" style="background: ${priorityColors[report.priority]};">Reporte</div>
+                    </div>
+                    <div class="post-content">
+                        <h3 style="margin-bottom: 10px;">${report.title}</h3>
+                        <p>📍 ${report.location}</p>
+                        ${report.description ? `<p>${report.description}</p>` : ''}
+                        <img src="${report.file_url}" alt="Foto del reporte" class="post-image">
+                    </div>
+                    ${commentsHtml}
+                    ${resolutionsHtml}
+                    <div class="post-actions" style="margin-top: 15px;">
+                        <button class="verify-btn" onclick="openCommentModal('${report.id}')">
+                            💬 Comentar
+                        </button>
+                        <button class="verify-btn" onclick="openResolutionModal('${report.id}')">
+                            ✅ Subir Resolución
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function openHabitEvidenceModal(habitId) {
+            document.getElementById('habitEvidenceHabitId').value = habitId;
+            document.getElementById('habitEvidenceModal').style.display = 'block';
+        }
+
+        function openCommentModal(reportId) {
+            document.getElementById('commentReportId').value = reportId;
+            document.getElementById('commentModal').style.display = 'block';
+        }
+
+        function openResolutionModal(reportId) {
+            document.getElementById('resolutionEvidenceReportId').value = reportId;
+            document.getElementById('resolutionEvidenceModal').style.display = 'block';
+        }
+
+        function openHabitCommentModal(evidenceId) {
+            document.getElementById('habitCommentEvidenceId').value = evidenceId;
+            document.getElementById('habitCommentModal').style.display = 'block';
+        }
+
+        async function submitHabitEvidence(e) {
+            e.preventDefault();
+            
+            const habitId = document.getElementById('habitEvidenceHabitId').value;
+            const fileInput = document.getElementById('habitEvidenceFile');
+            const comment = document.getElementById('habitEvidenceComment').value;
+            
+            if (!fileInput.files || !fileInput.files[0]) {
+                showToast('Por favor selecciona un archivo', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const fileName = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                const fileUrl = event.target.result;
+                
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('habit_evidences')
+                        .insert([{
+                            habit_id: habitId,
+                            user_id: currentUser.userId,
+                            file_url: fileUrl,
+                            file_name: fileName,
+                            comment: comment || null,
+                            verified_count: 0,
+                            is_verified: false,
+                            required_verifications: 3 // Default value, might need to be dynamic
+                        }])
+                        .select();
+                    
+                    if (error) throw error;
+                    
+                    showToast('Evidencia subida exitosamente. Espera las verificaciones de la comunidad.');
+                    closeModal('habitEvidenceModal');
+                    document.getElementById('habitEvidenceForm').reset();
+                    document.getElementById('habitEvidenceFilePreview').innerHTML = '';
+                    loadHabits();
+                } catch (error) {
+                    console.error('Error al subir evidencia:', error);
+                    showToast('Error al subir la evidencia: ' + error.message, 'error');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function submitResolutionEvidence(e) {
+            e.preventDefault();
+            
+            const reportId = document.getElementById('resolutionEvidenceReportId').value;
+            const fileInput = document.getElementById('resolutionEvidenceFile');
+            const description = document.getElementById('resolutionEvidenceDescription').value;
+            
+            if (!fileInput.files || !fileInput.files[0]) {
+                showToast('Por favor selecciona un archivo', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const fileName = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                const fileUrl = event.target.result;
+                
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('resolution_evidences')
+                        .insert([{
+                            report_id: reportId,
+                            user_id: currentUser.userId,
+                            file_url: fileUrl,
+                            file_name: fileName,
+                            description: description || null,
+                            verified_count: 0,
+                            is_verified: false,
+                            required_verifications: 3 // Default value, might need to be dynamic
+                        }])
+                        .select();
+                    
+                    if (error) throw error;
+                    
+                    showToast('Evidencia de resolución subida. Espera las verificaciones.');
+                    closeModal('resolutionEvidenceModal');
+                    document.getElementById('resolutionEvidenceForm').reset();
+                    document.getElementById('resolutionEvidenceFilePreview').innerHTML = '';
+                    loadCommunity();
+                } catch (error) {
+                    console.error('Error al subir evidencia de resolución:', error);
+                    showToast('Error al subir la evidencia: ' + error.message, 'error');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function submitComment(e) {
+            e.preventDefault();
+            
+            const reportId = document.getElementById('commentReportId').value;
+            const commentText = document.getElementById('commentText').value;
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('report_comments')
+                    .insert([{
+                        report_id: reportId,
+                        user_id: currentUser.userId,
+                        comment: commentText
+                    }])
+                    .select();
+                
+                if (error) throw error;
+                
+                showToast('Comentario agregado');
+                closeModal('commentModal');
+                document.getElementById('commentForm').reset();
+                loadCommunity();
+            } catch (error) {
+                console.error('Error al agregar comentario:', error);
+                showToast('Error al agregar comentario: ' + error.message, 'error');
+            }
+        }
+
+        async function submitHabitComment(e) {
+            e.preventDefault();
+            
+            const evidenceId = document.getElementById('habitCommentEvidenceId').value;
+            const commentText = document.getElementById('habitCommentText').value;
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('habit_evidence_comments')
+                    .insert([{
+                        evidence_id: evidenceId,
+                        user_id: currentUser.userId,
+                        comment: commentText
+                    }])
+                    .select();
+                
+                if (error) throw error;
+                
+                showToast('Comentario agregado');
+                document.getElementById('habitCommentModal').style.display = 'none';
+                document.getElementById('habitCommentForm').reset();
+                loadCommunity();
+            } catch (error) {
+                console.error('Error al agregar comentario:', error);
+                showToast('Error al agregar comentario: ' + error.message, 'error');
+            }
+        }
+
+        async function verifyEvidence(type, evidenceId) {
+            try {
+                const { data: existingVerification, error: checkError } = await supabaseClient
+                    .from('verifications')
+                    .select('*')
+                    .eq('evidence_id', evidenceId)
+                    .eq('evidence_type', type)
+                    .eq('user_id', currentUser.userId)
+                    .maybeSingle();
+                
+                if (existingVerification) {
+                    showToast('Ya has verificado esta evidencia', 'error');
+                    return;
+                }
+                
+                // Record the user's verification
+                const { error: insertError } = await supabaseClient
+                    .from('verifications')
+                    .insert([{
+                        evidence_id: evidenceId,
+                        evidence_type: type,
+                        user_id: currentUser.userId
+                    }]);
+                
+                if (insertError) throw insertError;
+                
+                // Determine which table to use
+                const tableName = type === 'habit' ? 'habit_evidences' : 'resolution_evidences';
+                
+                // Get the evidence details to update counts
+                const { data: evidence, error: evidenceError } = await supabaseClient
+                    .from(tableName)
+                    .select('*')
+                    .eq('id', evidenceId)
+                    .single();
+                
+                if (evidenceError) throw evidenceError;
+                
+                const newCount = evidence.verified_count + 1;
+                const isNowVerified = newCount >= evidence.required_verifications;
+                
+                // Update the evidence's verification count and status
+                const { error: updateError } = await supabaseClient
+                    .from(tableName)
+                    .update({
+                        verified_count: newCount,
+                        is_verified: isNowVerified
+                    })
+                    .eq('id', evidenceId);
+                
+                if (updateError) throw updateError;
+                
+                const motivationalMessages = [
+                    '¡Verificación exitosa! Juntos hacemos la diferencia 🌟',
+                    '¡Genial! Gracias por contribuir a la comunidad 💚',
+                    '¡Excelente! Tu verificación ayuda al planeta 🌍',
+                    '¡Bravo! Cada verificación cuenta ✨',
+                    '¡Fantástico! Sigamos construyendo juntos 🌱'
+                ];
+                const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+                
+                // If verified, perform additional actions and delete evidence
+                if (isNowVerified) {
+                    const evidenceElement = document.querySelector(`[data-evidence-id="${evidenceId}"]`);
+                    if (evidenceElement) {
+                        evidenceElement.classList.add('verification-success');
+                        await new Promise(resolve => setTimeout(resolve, 600));
+                    }
+                    
+                    if (type === 'habit') {
+                        const { data: habit } = await supabaseClient
+                            .from('habits')
+                            .select('completed_count, streak, last_streak_date')
+                            .eq('id', evidence.habit_id)
+                            .single();
+                        
+                        if (habit) {
+                            // Obtener la fecha actual en formato YYYY-MM-DD
+                            const today = new Date();
+                            const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+                            
+                            // Obtener la última fecha de actualización de racha
+                            const lastStreakDateStr = habit.last_streak_date; // Ya está en formato YYYY-MM-DD desde la BD
+                            
+                            console.log('[v0] Verificando racha - Hoy:', todayStr, 'Última fecha:', lastStreakDateStr);
+                            
+                            // Verificar si ya se incrementó la racha hoy
+                            const canIncrementStreak = lastStreakDateStr !== todayStr;
+                            
+                            // Actualizar el hábito
+                            const updateData = {
+                                completed_count: habit.completed_count + 1
+                            };
+                            
+                            // Solo actualizar racha si es un día diferente
+                            if (canIncrementStreak) {
+                                let newStreak = habit.streak;
+                                
+                                if (!lastStreakDateStr) {
+                                    // Primera vez, iniciar racha
+                                    newStreak = 1;
+                                } else {
+                                    // Calcular el día anterior
+                                    const yesterdayDate = new Date(today);
+                                    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                                    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+                                    
+                                    console.log('[v0] Ayer fue:', yesterdayStr);
+                                    
+                                    if (lastStreakDateStr === yesterdayStr) {
+                                        // Continúa la racha (verificó ayer)
+                                        newStreak = habit.streak + 1;
+                                        console.log('[v0] Racha continúa, nuevo valor:', newStreak);
+                                    } else if (lastStreakDateStr < yesterdayStr) {
+                                        // Se rompió la racha (pasó más de un día)
+                                        newStreak = 1;
+                                        console.log('[v0] Racha rota, reiniciando a 1');
+                                    } else {
+                                        // Fecha futura? mantener racha actual
+                                        newStreak = habit.streak;
+                                    }
+                                }
+                                
+                                updateData.streak = newStreak;
+                                updateData.last_streak_date = todayStr;
+                                console.log('[v0] Incrementando racha. Nueva racha:', newStreak);
+                            } else {
+                                console.log('[v0] Ya se incrementó la racha hoy, solo actualizando completed_count');
+                            }
+                            
+                            await supabaseClient
+                                .from('habits')
+                                .update(updateData)
+                                .eq('id', evidence.habit_id);
+                        }
+                        
+                        // Delete the verified habit evidence
+                        await supabaseClient
+                            .from('habit_evidences')
+                            .delete()
+                            .eq('id', evidenceId);
+                    } else {
+                        // Delete the verified resolution evidence
+                        await supabaseClient
+                            .from('resolution_evidences')
+                            .delete()
+                            .eq('id', evidenceId);
+
+                        // Update the report status to "resuelto"
+                        await supabaseClient
+                            .from('reports')
+                            .update({ status: 'resuelto' })
+                            .eq('id', evidence.report_id);
+                    }
+                }
+                
+                showToast(randomMessage, 'success', true);
+                
+                // Reload appropriate sections
+                if (type === 'habit') {
+                    loadCommunity();
+                    loadHabits();
+                } else {
+                    loadCommunity();
+                    loadReports();
+                }
+            } catch (error) {
+                console.error('Error al verificar evidencia:', error);
+                showToast('Error al verificar la evidencia', 'error');
+            }
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'organico': '🍂',
+                'plastico': '🥤',
+                'papel': '📄',
+                'vidrio': '🍾',
+                'metal': '🥫',
+                'electronico': '🔌',
+                'peligroso': '⚠️',
+                'reciclaje': '♻️',
+                'contenedores': '🚮',
+                'reduccion': '📉',
+                'compostaje': '🌿',
+                'reutilizacion': '🔄',
+                'comunitario': '🤝'
+            };
+            return icons[category] || '📋';
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const past = new Date(date);
+            const diffMs = now - past;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Ahora';
+            if (diffMins < 60) return `${diffMins}m`;
+            if (diffHours < 24) return `${diffHours}h`;
+            return `${diffDays}d`;
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        };
+
+        function selectQuickHabit(index) {
+            selectedQuickHabitIndex = index;
+            const habit = quickHabits[index];
+            
+            document.querySelectorAll('.quick-habit-card').forEach((card, i) => {
+                if (i === index) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+            
+            document.getElementById('quickHabitSelectedInfo').textContent = 
+                `Seleccionado: ${habit.title} - ${habit.description}`;
+        }
+
+        async function addSelectedQuickHabit() {
+            if (selectedQuickHabitIndex === null) {
+                showToast('Por favor selecciona un hábito primero', 'error');
+                return;
+            }
+            
+            const habit = quickHabits[selectedQuickHabitIndex];
+            const frequency = document.getElementById('quickHabitUniversalFreq').value;
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('habits')
+                    .insert([{
+                        user_id: currentUser.userId,
+                        category: habit.category,
+                        description: habit.description,
+                        quantity: habit.quantity,
+                        frequency: frequency,
+                        streak: 0,
+                        completed_count: 0
+                    }])
+                    .select();
+                
+                if (error) throw error;
+                
+                const motivationalMessages = [
+                    '¡Excelente! Sigamos reciclando juntos 🌱',
+                    '¡Genial! Cada acción cuenta para el planeta 🌍',
+                    '¡Bravo! Estás haciendo la diferencia ♻️',
+                    '¡Fantástico! El planeta te lo agradece 🌿',
+                    '¡Increíble! Juntos por un mundo más limpio 💚',
+                    '¡Bien hecho! Cada hábito suma al cambio 🌟'
+                ];
+                const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+                
+                showToast(randomMessage);
+                loadHabits();
+                showSubTab('habitsList', null);
+                
+                selectedQuickHabitIndex = null;
+                document.querySelectorAll('.quick-habit-card').forEach(card => card.classList.remove('selected'));
+                document.getElementById('quickHabitSelectedInfo').textContent = 'Haz clic en una tarjeta para seleccionarla';
+            } catch (error) {
+                console.error('[v0] Error al agregar hábito rápido:', error);
+                showToast('Error al agregar hábito: ' + error.message, 'error');
+            }
+        }
+
+        function renderQuickHabits() {
+            const container = document.getElementById('quickHabitsGrid');
+            container.innerHTML = quickHabits.map((habit, index) => `
+                <div class="quick-habit-card ${selectedQuickHabitIndex === index ? 'selected' : ''}" onclick="selectQuickHabit(${index})" id="quickHabitCard_${index}">
+                    <div class="emoji">${habit.emoji}</div>
+                    <h3>${habit.title}</h3>
+                    <p>${habit.description}</p>
+                </div>
+            `).join('');
+        }
+
+        function loadEducation() {
+            // Implementation for loading education content goes here
+        }
+
+        async function deleteReport(reportId) {
+            try {
+                if (!currentUser || !currentUser.userId) {
+                    showToast('No se pudo verificar tu identidad', 'error');
+                    return;
+                }
+                
+                const { data: report } = await supabaseClient
+                    .from('reports')
+                    .select('user_id')
+                    .eq('id', reportId)
+                    .single();
+                
+                if (report.user_id !== currentUser.userId) {
+                    showToast('No tienes permiso para eliminar este reporte', 'error');
+                    return;
+                }
+                
+                const { error } = await supabaseClient
+                    .from('reports')
+                    .delete()
+                    .eq('id', reportId);
+                
+                if (error) throw error;
+                
+                showToast('Reporte eliminado exitosamente', 'success', true);
+                loadReports(); 
+                loadCommunity(); 
+                closeModal('deleteReportModal');
+            } catch (error) {
+                console.error('Error al eliminar reporte:', error);
+                showToast('Error al eliminar el reporte', 'error');
+            }
+        }
+
+        function showDeleteReportModal(reportId) {
+            const modal = document.getElementById('deleteReportModal');
+            modal.style.display = 'flex';
+            modal.dataset.reportId = reportId; 
+        }
+
+        function closeDeleteReportModal() {
+            const modal = document.getElementById('deleteReportModal');
+            modal.style.display = 'none';
+            delete modal.dataset.reportId; 
+        }
+
+        function confirmDeleteReport() {
+            const modal = document.getElementById('deleteReportModal');
+            const reportId = modal.dataset.reportId;
+            if (reportId) {
+                deleteReport(reportId);
+            }
+        }
+
+        function getWeekNumber() {
+            const d = new Date();
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+            const yearStart = new Date(d.getFullYear(), 0, 1);
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+
+        const weeklyChallengesPacks = [
+            [
+                {
+                    title: "Verificador Activo",
+                    description: "Verifica 10 evidencias de la comunidad",
+                    type: "verifications_given",
+                    goal: 10
+                },
+                {
+                    title: "Comentarista Activo",
+                    description: "Deja 10 comentarios constructivos",
+                    type: "comments_posted",
+                    goal: 10
+                },
+                {
+                    title: "Hábitos Constantes",
+                    description: "Completa 5 hábitos con evidencia",
+                    type: "habits_completed",
+                    goal: 5
+                },
+                {
+                    title: "Resolutor de Problemas",
+                    description: "Resuelve 3 reportes ambientales",
+                    type: "reports_resolved",
+                    goal: 3
+                }
+            ],
+            [
+                {
+                    title: "Super Verificador",
+                    description: "Verifica 15 evidencias de la comunidad",
+                    type: "verifications_given",
+                    goal: 15
+                },
+                {
+                    title: "Comunicador Ambiental",
+                    description: "Deja 15 comentarios en evidencias",
+                    type: "comments_posted",
+                    goal: 15
+                },
+                {
+                    title: "Campeón de Hábitos",
+                    description: "Completa 8 hábitos con evidencia",
+                    type: "habits_completed",
+                    goal: 8
+                },
+                {
+                    title: "Experto en Resolución",
+                    description: "Resuelve 5 reportes ambientales",
+                    type: "reports_resolved",
+                    goal: 5
+                }
+            ],
+            [
+                {
+                    title: "Líder Comunitario",
+                    description: "Verifica 20 evidencias de otros usuarios",
+                    type: "verifications_given",
+                    goal: 20
+                },
+                {
+                    title: "Mentor Ambiental",
+                    description: "Deja 20 comentarios motivadores",
+                    type: "comments_posted",
+                    goal: 20
+                },
+                {
+                    title: "Maestro de Hábitos",
+                    description: "Completa 10 hábitos con evidencia",
+                    type: "habits_completed",
+                    goal: 10
+                },
+                {
+                    title: "Solucionador Experto",
+                    description: "Resuelve 7 reportes ambientales",
+                    type: "reports_resolved",
+                    goal: 7
+                }
+            ],
+            [
+                {
+                    title: "Leyenda Verificadora",
+                    description: "Verifica 25 evidencias de la comunidad",
+                    type: "verifications_given",
+                    goal: 25
+                },
+                {
+                    title: "Inspirador Comunitario",
+                    description: "Deja 25 comentarios constructivos",
+                    type: "comments_posted",
+                    goal: 25
+                },
+                {
+                    title: "Titán de Hábitos",
+                    description: "Completa 12 hábitos con evidencia",
+                    type: "habits_completed",
+                    goal: 12
+                },
+                {
+                    title: "Héroe Ambiental",
+                    description: "Resuelve 10 reportes ambientales",
+                    type: "reports_resolved",
+                    goal: 10
+                }
+            ]
+        ];
+
+        async function loadDashboard() {
+            if (!currentUser) return;
+
+            try {
+                const { data: habits } = await supabaseClient
+                    .from('habits')
+                    .select('streak')
+                    .eq('user_id', currentUser.userId);
+                
+                // Encontrar la racha máxima
+                let currentStreak = 0;
+                if (habits && habits.length > 0) {
+                    currentStreak = Math.max(...habits.map(h => h.streak || 0));
+                }
+
+                // Get user's own submitted evidences (for streak and weekly progress calculation)
+                const { data: myHabitEvidences } = await supabaseClient
+                    .from('habit_evidences')
+                    .select('id') // Only need the IDs
+                    .eq('user_id', currentUser.userId);
+                
+                const { data: myResolutionEvidences } = await supabaseClient
+                    .from('resolution_evidences')
+                    .select('id') // Only need the IDs
+                    .eq('user_id', currentUser.userId);
+
+                const myHabitEvidenceIds = myHabitEvidences ? myHabitEvidences.map(e => e.id) : [];
+                const myResolutionEvidenceIds = myResolutionEvidences ? myResolutionEvidences.map(e => e.id) : [];
+
+                // Count active habits
+                const { count: activeHabitsCount } = await supabaseClient
+                    .from('habits')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.userId);
+
+                // Count unresolved reports
+                const { count: unresolvedCount } = await supabaseClient
+                    .from('reports')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', currentUser.userId)
+                    .neq('status', 'resuelto');
+
+                // Weekly progress calculation
+                const now = new Date();
+                const dayOfWeek = now.getDay();
+                const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday is 0, Sunday is 6. Adjust to make Monday the start of week.
+                const weekStart = new Date(now);
+                weekStart.setDate(now.getDate() - diff);
+                weekStart.setHours(0, 0, 0, 0);
+
+                let weeklyHabitVerifications = 0;
+                let weeklyResolutionVerifications = 0;
+
+                // Para hábitos: contar evidencias únicas que alcanzaron 3+ verificaciones esta semana
+                if (myHabitEvidenceIds.length > 0) {
+                    const { data: habitVerifsRaw } = await supabaseClient
+                        .from('verifications')
+                        .select('evidence_id, created_at')
+                        .eq('evidence_type', 'habit')
+                        .in('evidence_id', myHabitEvidenceIds)
+                        .gte('created_at', weekStart.toISOString());
+                    
+                    if (habitVerifsRaw && habitVerifsRaw.length > 0) {
+                        // Agrupar por evidence_id y contar cuántas tienen 3+ verificaciones
+                        const evidenceCounts = {};
+                        habitVerifsRaw.forEach(v => {
+                            evidenceCounts[v.evidence_id] = (evidenceCounts[v.evidence_id] || 0) + 1;
+                        });
+                        
+                        // Contar solo evidencias que alcanzaron 3+ verificaciones
+                        weeklyHabitVerifications = Object.values(evidenceCounts).filter(count => count >= 3).length;
+                    }
+                }
+
+                // Para reportes: contar evidencias únicas que alcanzaron 3+ verificaciones esta semana
+                if (myResolutionEvidenceIds.length > 0) {
+                    const { data: resolutionVerifsRaw } = await supabaseClient
+                        .from('verifications')
+                        .select('evidence_id, created_at')
+                        .eq('evidence_type', 'resolution')
+                        .in('evidence_id', myResolutionEvidenceIds)
+                        .gte('created_at', weekStart.toISOString());
+                    
+                    if (resolutionVerifsRaw && resolutionVerifsRaw.length > 0) {
+                        // Agrupar por evidence_id y contar cuántas tienen 3+ verificaciones
+                        const evidenceCounts = {};
+                        resolutionVerifsRaw.forEach(v => {
+                            evidenceCounts[v.evidence_id] = (evidenceCounts[v.evidence_id] || 0) + 1;
+                        });
+                        
+                        // Contar solo evidencias que alcanzaron 3+ verificaciones
+                        weeklyResolutionVerifications = Object.values(evidenceCounts).filter(count => count >= 3).length;
+                    }
+                }
+
+
+                const totalVerifications = weeklyHabitVerifications + weeklyResolutionVerifications;
+                const weeklyGoal = 10; // Objetivo reducido a 10 verificaciones
+                const progressPercentage = Math.min((totalVerifications / weeklyGoal) * 100, 100);
+                const circumference = 2 * Math.PI * 90;
+                const offset = circumference - (progressPercentage / 100) * circumference;
+
+                // Weekly challenges
+                const currentWeekNumber = Math.ceil((now - new Date(now.getFullYear(), 0, 1)) / 604800000);
+                const packIndex = ((currentWeekNumber - 1) % 4);
+                const currentChallenges = weeklyChallengesPacks[packIndex];
+
+                const challengesWithProgress = await Promise.all(currentChallenges.map(async (challenge) => {
+                    let progress = 0;
+                    
+                    if (challenge.type === 'verifications_given') {
+                        // Count verifications GIVEN by user this week
+                        const { count: habitVerifs } = await supabaseClient
+                            .from('verifications')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('user_id', currentUser.userId)
+                            .eq('evidence_type', 'habit')
+                            .gte('created_at', weekStart.toISOString());
+                        
+                        const { count: reportVerifs } = await supabaseClient
+                            .from('verifications')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('user_id', currentUser.userId)
+                            .eq('evidence_type', 'resolution')
+                            .gte('created_at', weekStart.toISOString());
+                        
+                        progress = (habitVerifs || 0) + (reportVerifs || 0);
+                    } else if (challenge.type === 'comments_posted') {
+                        const { count: reportCommentsCount } = await supabaseClient
+                            .from('report_comments')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('user_id', currentUser.userId)
+                            .gte('created_at', weekStart.toISOString());
+                        
+                        const { count: habitCommentsCount } = await supabaseClient
+                            .from('habit_evidence_comments')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('user_id', currentUser.userId)
+                            .gte('created_at', weekStart.toISOString());
+                        
+                        progress = (reportCommentsCount || 0) + (habitCommentsCount || 0);
+                    } else if (challenge.type === 'habits_completed') {
+                        progress = weeklyHabitVerifications;
+                    } else if (challenge.type === 'reports_resolved') {
+                        progress = weeklyResolutionVerifications;
+                    }
+                    
+                    const percentage = Math.min((progress / challenge.goal) * 100, 100);
+                    return { ...challenge, progress, percentage };
+                }));
+
+                const challengeEmojis = {
+                    'Verificador Activo': '✅',
+                    'Comentarista Activo': '💬',
+                    'Hábitos Constantes': '🎯',
+                    'Resolutor de Problemas': '🔧',
+                    'Super Verificador': '⭐',
+                    'Comunicador Ambiental': '🗣️',
+                    'Campeón de Hábitos': '🏆',
+                    'Experto en Resolución': '🛠️',
+                    'Líder Comunitario': '👑',
+                    'Mentor Ambiental': '🌟',
+                    'Maestro de Hábitos': '🎖️',
+                    'Solucionador Experto': '⚙️',
+                    'Leyenda Verificadora': '💎',
+                    'Inspirador Comunitario': '✨',
+                    'Titán de Hábitos': '🏅',
+                    'Héroe Ambiental': '🦸'
+                };
+
+                const { data: unlockedAchievements } = await supabaseClient
+                    .from('achievements')
+                    .select('achievement_key')
+                    .eq('user_id', currentUser.userId);
+                
+                const unlockedKeys = new Set(unlockedAchievements ? unlockedAchievements.map(a => a.achievement_key) : []);
+
+                const allAchievements = [
+                    {
+                        key: 'weekly_progress_1',
+                        emoji: '1️⃣',
+                        title: 'Primera Semana',
+                        description: 'Completa el progreso semanal 1 vez'
+                    },
+                    {
+                        key: 'weekly_progress_2',
+                        emoji: '2️⃣',
+                        title: 'Dos Semanas',
+                        description: 'Completa el progreso semanal 2 veces'
+                    },
+                    {
+                        key: 'weekly_progress_3',
+                        emoji: '3️⃣',
+                        title: 'Tres Semanas',
+                        description: 'Completa el progreso semanal 3 veces'
+                    },
+                    {
+                        key: 'weekly_progress_4',
+                        emoji: '4️⃣',
+                        title: 'Cuatro Semanas',
+                        description: 'Completa el progreso semanal 4 veces'
+                    },
+                    {
+                        key: 'first_verification',
+                        emoji: '🌱',
+                        title: 'Primera Verificación',
+                        description: 'Recibe tu primera verificación'
+                    },
+                    {
+                        key: 'eco_warrior',
+                        emoji: '🌍',
+                        title: 'Guerrero Ecológico',
+                        description: 'Completa 50 acciones verificadas'
+                    },
+                    {
+                        key: 'streak_master',
+                        emoji: '🔥',
+                        title: 'Maestro de Rachas',
+                        description: 'Alcanza una racha de 7 días'
+                    },
+                    {
+                        key: 'community_helper',
+                        emoji: '🤝',
+                        title: 'Ayudante Comunitario',
+                        description: 'Verifica 100 evidencias de otros'
+                    }
+                ];
+
+                document.getElementById('dashboard-content').innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="label">🔥 Racha Actual</div>
+                            <div class="value">${currentStreak}</div>
+                            <div class="label">días consecutivos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">📋 Hábitos Activos</div>
+                            <div class="value">${activeHabitsCount}</div>
+                            <div class="label">en seguimiento</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">📍 Reportes Activos</div>
+                            <div class="value">${unresolvedCount || 0}</div>
+                            <div class="label">sin resolver</div>
+                        </div>
+                    </div>
+
+                    <div class="weekly-progress-container">
+                        <h3>📊 Progreso Semanal</h3>
+                        <div class="progress-circle-container">
+                            <div class="progress-circle">
+                                <svg width="200" height="200">
+                                    <defs>
+                                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                    <circle class="progress-circle-bg" cx="100" cy="100" r="90" />
+                                    <circle 
+                                        class="progress-circle-fill" 
+                                        cx="100" 
+                                        cy="100" 
+                                        r="90"
+                                        stroke-dasharray="${circumference}"
+                                        stroke-dashoffset="${offset}"
+                                    />
+                                </svg>
+                                <div class="progress-text">
+                                    <div class="progress-number">${totalVerifications}/${weeklyGoal}</div>
+                                    <div class="progress-label">acciones verificadas</div>
+                                </div>
+                            </div>
+                            <div class="progress-breakdown">
+                                <div class="breakdown-item">
+                                    <span class="breakdown-dot habits"></span>
+                                    <span>Hábitos: ${weeklyHabitVerifications}</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span class="breakdown-dot reports"></span>
+                                    <span>Reportes: ${weeklyResolutionVerifications}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="weekly-challenges-container">
+                        <h3>🎯 Retos de Esta Semana</h3>
+                        <div class="challenges-list">
+                            ${challengesWithProgress.map(challenge => `
+                                <div class="challenge-card-dynamic">
+                                    <div class="challenge-header">
+                                        <h4>${challengeEmojis[challenge.title] || '🎯'} ${challenge.title}</h4>
+                                        <span class="challenge-counter">${challenge.progress}/${challenge.goal}</span>
+                                    </div>
+                                    <p class="challenge-desc">${challenge.description}</p>
+                                    <div class="challenge-progress-bar">
+                                        <div class="challenge-progress-fill" style="width: ${challenge.percentage}%;"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="achievements-container">
+                        <h3>🏆 Logros</h3>
+                        <div class="achievements-grid">
+                            ${allAchievements.map(achievement => {
+                                const isUnlocked = unlockedKeys.has(achievement.key);
+                                return `
+                                    <div class="achievement-item ${isUnlocked ? 'unlocked' : 'locked'}">
+                                        ${isUnlocked ? '<span class="achievement-check">✓</span>' : ''}
+                                        <div class="achievement-emoji">${achievement.emoji}</div>
+                                        <div class="achievement-title">${achievement.title}</div>
+                                        <div class="achievement-desc">${achievement.description}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error al cargar dashboard:', error);
+                showToast('Error al cargar el dashboard', 'error');
+            }
+        }
+
+        // Initial call to check authentication and load data
+        checkAuth();
+    </script>
+</body>
+</html>
+
